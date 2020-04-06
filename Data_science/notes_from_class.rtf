@@ -1,0 +1,84 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 ####NOTES\
+#save csv in your home name directory. The R script, RmD, two CSV files, flipbook (two html could make it up to 7)\
+#read_excel(PATHTODATA, sheet = )\
+#make sure it is "Control", "Full", "Partial"...\
+#and it make sure plot_bites also has "External"\
+#make sure each dataset is tidy\
+#one observation per row, one variable per column\
+#algalDiversity IS TIDY, treatment needs to be made consistent\
+#coralGrowth IS TIDY, treatment needs to be changed\
+  #case_when, starts with\
+#plotbites needs date to be separated into two, \
+#cleaning month and years. \
+#recruitment is tidy\
+#exclosure cover is NOT TIDY\
+  #starting from total upright:acanthrop. variables are going to "summed percent cover"\
+  #names can go to type of thing\
+#put two assertions:\
+  #filter for all of the NAs before you muck around with it. Some may be introduced.\
+  #introducing NAs: if there is no more numbers!\
+#make assertions AFTER you are done piping.\
+#year should start with a 2! That could be an assertion\
+#distinct got rid of duplicate rows for me\
+#maybe want to try full join. May want to specify by=treatment\
+\
+###assertion practice\
+## we want to make sure in iris that there are only species setosa, versicolor, virginica\
+#define a variable correct_cols <- 5\
+#define another variable observed <- ncol(iris)\
+#if NO BUG, those numbers are equal\
+#### if those numbers are not equal, stop while you're ahead!\
+#if (correct_cols != observed_cols)\{\
+ # stop ("wrong number of columns!)\
+#\} #stop will STOP the script from running\
+\
+#to give yourself a positive message\
+#if (correct_cols == observed_cols)\{\
+#print("all is fine w/ number of collumns!!")\
+#\} else \{\
+  #stop("wrong number of columns!")\
+#\}\
+#need a strict assertion\
+\
+##sertosa, versicolor, virginica\
+#correct_rows <- nrow(iris)\
+#iris %>%\
+  #filter(Species %in% c("setosa", "versicolor", "virginica")) -> good\
+#good should have 150 rows\
+#good_rows <- nrow(good)\
+\
+# if (correct_rows != good_rows)\{\
+  #stop ("species column has wrong species names")\
+#\}\
+\
+#iris %>%\
+  #filter ( !(Species %in% c("setosa", "versicolor", "virginica"))) -> should_have_no_rows\
+#bad_rows <- nrows(should_have_no_rows)\
+#if (bad_rows != 0)\{\
+#stop ("there are some unexpected rows")\
+#\}\
+\
+###flipbookr version\
+#starts with a hashtag and needs a \
+#```\{r data-wrangled, include=FALSE\}\
+##read in the data\
+##get it in a plotable form\
+\
+#```\{r myplot, include =F\} \
+#ggplot(iris)\
+#aes(x=Sepal.Length)+\
+  #geom_density(alpha=0.5)+\
+  #scale_fill_brewer(pallete="dark2")\
+#no title!\
+#---\
+#`r "r_chunk_reveal("myplot")`\
+#---\
+#put my ploot somewhere lol (remind dr.spielman)\
+#F=FALSE}

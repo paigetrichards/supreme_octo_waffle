@@ -1,0 +1,253 @@
+---
+title: "Introduction to linear regression"
+subtitle: "Data Science for Biologists, Spring 2020"
+author: "Paige Richards"
+output: 
+  html_document:
+    highlight: tango
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom) 
+```
+
+## Instructions
+
+Standard grading criteria apply, except there is no "answer style" - just write out answers normally! Note the following:
+
++ $\alpha = 0.05$
++ When adding regression lines as plot subtitles, don't worry about writing $\epsilon$
++ Do not remove insignificant predictors from your regression line formula when reporting it (this is just a question I get a lot)
+
+This assignment will use an external dataset from a field experiment studying the diversity of [Chinese Rowan](https://en.wikipedia.org/wiki/Rowan) trees. Researchers randomly sampled and recorded characteristics of leaves from three different species in the *Sorbus* genus. They recorded the following measurements for each tree (don't worry about units)
+
+1. `species`: the species of tree
+2. `altitude`: the altitude of the tree
+3. `respiratory_rate`: average respiratory rate across a random sample of leaves from that tree
+4. `leaf_len`: average leaf length across a random sample of leaves from that tree
+5. `birds_nesting`: whether birds were actively nesting in the tree
+
+For this assignment, you will examine how various predictors may explain variation in *respiratory rate.*
+
+```{r}
+# rowan trees, no relation :)
+rowan <- read_csv("https://raw.githubusercontent.com/sjspielman/datascience_for_biologists/master/data/rowan_trees.csv")
+dplyr::glimpse(rowan)
+```
+
+### Question 1
+
+
+> Background for this completing question is under the header "Simple linear regression: Single numeric predictor" in the linear regression tutorial
+
+
+Construct a linear model that examines how *altitude* might explain variation in *respiratory rate*. Take the following steps to do so (code as you go through the steps!)
+
+Make a quick scatterplot to make sure the "linear relationship" assumption is met for this data. Be sure to have your predictor and response on the correct axis!:
+
+```{r}
+### figure to check linearity goes here.
+### no need for fancy, can keep labels as is, etc.
+#make a plot to make sure the assumptions are met. In this case, we are looking to see if there is a linear relationship. Is it a predictor? Altitude is a numeric predictor. Response goes on the y
+ggplot(rowan, aes(x = altitude , y = respiratory_rate)) +
+  geom_point() #looks like not a great linear relationship. Appears that the residuals will be very high. It is reasonable to still do a linear line
+```
+
+
+Now that you have confirmed the relationship is linear (hint: it is linear), build your linear model. *BEFORE you examine its output*, evaluate whether the model residuals were normally distributed:
+
+```{r}
+### build model and check normal residuals
+### do not look at the model summary yet!
+#MUST BE Y~X
+lm(respiratory_rate ~ altitude, data = rowan) -> fit #need to look at residuals
+#get residuals
+broom::augment(fit, rowan) -> aug_fit #give it the model and then the data
+#21 is closed circle instead of closed circle
+qqnorm(aug_fit$.resid, pch = 21)
+qqline(aug_fit$.resid, col = "dodgerblue")
+```
+
+
+Now that you have confirmed the residuals are roughly normally distributed (hint: they are), examine the output from your linear model. In the space below the code chunk, discuss in *bullet form* (1-2 sentences each): a) Provide an interpretation of the intercept, b) Provide an interpretation of the altitude coefficient, c) Provide an interpretation of the $R^2$ value (those dollar signs signify "math mode" - see the HTML output!), and finally d) Conclude whether altitude is a strong or weak predictor of respiratory rate, consider "biological significance" (effect size!) as well as statistical significance.
+
+```{r}
+## examine model output here
+summary(fit)
+
+```
+
++ Intercept interpretation
+When altitude is zero, the respiratory rate is 8.386e-03. This is the intercept interpretation. This makes sense biologically, but since the p value is at 0.622, there is no evidence that the intercept differs from 0. 
++ altitude coefficient interpretation
+For every unit increase in altitude, we expect the respiratory rate to increase by 3.025e-04. This is highly significant because the p value is 2.66e-14. We can then reject the null that the coefficient is 0.
++ $R^2$ interpretation
+We are using the adjusted $R^2$ which is 0.1743. This tells us that 17.43% of variation in respiratory rate is explained by this model, which is included only with altitude is the predictor. This is highly significant at 2.66e-14. This means that 82.57% of variation in respiratory rate is not explained or unexplained by the data. 
++ Model conclusion
+It is a signficiant model but it has weak explanatory power. There is a lot of error. We are sure that the R^2 is NOT zero but it is VERY far from zero so this means that it has a weak explanatory power. 
+
+This is the equation of the line. 
+y + 3.025e-0.4x + 8.386e-03
+Should look at how small the number this is based on the scale of the data. Order of magnitude defines an order of 10. X is altitude
+
+Finally, make a stylish scatterplot of your findings. Your scatterplot should:
+
++ Use your favorite ggplot theme and colors (it's allowed to like the default!)
++ Clearly show the regression line and its 95% confidence interval
++ Include a meaningful title, along with a subtitle that is the fitted model itself, as well as other nice labels
++ Include a well-placed annotation that gives the model's $R^2$
+
+```{r}
+### stylish plot goes here
+ggplot(rowan, aes(x = altitude , y = respiratory_rate)) +
+  geom_point() +
+  labs(title = "Regression of Respiratory Rate against Altitude",
+       subtitle = "y + 3.025e-0.4x + 8.386e-03") +
+  geom_smooth(method = "lm") + #less data by the top and bottom. Default confidence interval is 95%.
+  annotate("text",
+           y = 0.35,
+           x = 200,
+           label = "R^2 == 0.1743",
+           parse = T)
+```
+
+
+
+### Question 2
+
+> Background for this completing question is under the header "Simple ANOVA: Single categorical predictor" in the linear regression tutorial
+
+Construct a linear model that examines how *species* might explain variation in *respiratory rate*. Take the following steps to do so (code as you go through the steps!)
+
+Make a quick plot (use `geom_point()`, seriously, not even a jitter!!) to make sure the "equal variance" assumption is met for this data:
+
+```{r}
+### figure to check assumption goes here.
+### no need for fancy, can keep labels as is, etc.
+#all anovas are linear regressions but with categorical predictor
+#the assumption that we need to check. We need equal variance. 
+ggplot(rowan, aes(x = species, y = respiratory_rate)) +
+  geom_point() #this shows equal variance. The space is all about the same. The assumption is met and now we are good. If i know what species that I am, do I know what 
+```
+
+
+Now that you have confirmed the variance is equal across groups (hint: it is), build your linear model. *BEFORE you examine its output*, evaluate whether the model residuals were normally distributed:
+
+```{r}
+### build model and check normal residuals
+### do not look at the model summary yet!
+lm(respiratory_rate ~ species, data = rowan) -> fit2 #need to look at residuals
+#get residuals
+broom::augment(fit2, rowan) -> aug_fit2 #give it the model and then the data
+#21 is closed circle instead of closed circle
+qqnorm(aug_fit2$.resid, pch = 19)
+qqline(aug_fit2$.resid, col = "goldenrod")
+```
+
+Now that you have confirmed the residuals are roughly normally distributed (hint: they are), examine the output from your linear model. In the space below the code chunk, discuss in *bullet form* (1-2 sentences each): a) Provide an interpretation of the intercept, b) Provide an interpretation of the species coefficient, c) Provide an interpretation of the $R^2$ value, and finally d) Conclude whether species is a strong or weak predictor of respiratory rate, consider "biological significance" (effect size!) as well as statistical significance.
+
+```{r}
+## examine model output here
+summary(fit2)
+#rowan %>% (species(level))
+#unique(rowan#species) #not a factor so it assumes alphabetical order. We know it's microphylla because it is the only one that has a coefficient
+```
+
++ Intercept interpretation
+The species is never zero. What is y when x is baseline? For microphylla trees, we expect a mean of respiratory rate of 0.148680. Microphylla is zero. This is highly significant with a p value is 2e-16. The intercept is definitely not zero. Categorical is relative to the baseline.
++ species coefficient interpretation
+There are two species coefficient. They tell you what each one is to the baseline which is microphylla. 
+  + For the first one, we expect, on average, oligodonta trees have a respiratory rate 0.018830 lower than microphylla. It is compared to the microphylla as the baseline. However, this is NOT significant with a p value of 0.0995, so there is no evidence that it differs from zero.
+  + For the second one, we expect, sargentiana trees have a respiratory rate 0.006180 lower than microphylla. However, this is NOT significantly different with a p value of 0.5880
++ $R^2$ interpretation
+$R^2 = 0.002792$ which is not significant with a p value of 0.2437. 
++ Model conclusion
+This is no explanatory evidence which means this is an entirely uninformative model. 
+
+
+Finally, make a stylish figure of your findings, choosing your own geom!
+
++ Use your favorite ggplot theme and colors (it's allowed to like the default!)
++ If your geom does not already show the center of each group (i.e. like a boxplot), be sure to add the means in with `stat_summary()`
++ Include a meaningful title, along with a subtitle that is the fitted model itself, as well as other nice labels
++ Include a well-placed annotation that gives the model's $R^2$
+
+```{r}
+### stylish plot goes here
+ggplot(rowan, aes(x = species, y = respiratory_rate))+
+  geom_boxplot(color = c("blue", "green", "pink"))
+
+##another way to do this. If you cannot see the standard error, it means it is small
+#ggplot(rowan, aes(x = species, y = respiratory_rate))+
+  #geom_jitter(width = 0.15) +
+  #stat_summary(color = "hotpink") defaults to mean and standard error
+```
+
+
+
+
+
+### Question 3
+
+
+> Background for this completing question is under the header "LM with numeric and categorical predictors" in the linear regression tutorial
+
+
+Construct a linear model that examines how BOTH *species* and *leaf_len* as independent effects might explain variation in *respiratory rate*. Again, take the following steps one by one:
+
+Since we already checked assumptions for `species` in the last question, make an appropriate plot to check the linearity assumption for `leaf_len`:
+
+```{r}
+### figure to check assumption goes here.
+### no need for fancy, can keep labels as is, etc.
+ggplot(rowan, aes(x = leaf_len, y = respiratory_rate)) +
+  geom_point() #not a curve so need linear regression
+```
+
+
+Build your linear model, and evaluate whether the model residuals were normally distributed:
+
+```{r}
+### build model and check normal residuals
+### do not look at the model summary yet!
+fit3 <- lm(respiratory_rate ~ species + leaf_len, data = rowan)
+broom::augment(fit3, rowan) -> aug_fit3 #give it the model and then the data
+#21 is closed circle instead of closed circle
+qqnorm(aug_fit3$.resid, pch = 19)
+qqline(aug_fit3$.resid, col = "forestgreen")
+```
+
+Now that you have confirmed the residuals are roughly normally distributed (hint: they are), examine the output from your linear model. In the space below the code chunk, discuss in *bullet form* (1-2 sentences each): a) Provide an interpretation of the intercept, b) Provide an interpretation of the `species` coefficient, c) Provide an interpretation of the `leaf_len` coefficient d) Provide an interpretation of the $R^2$ value, and finally e) Conclude whether species is a strong or weak predictor of respiratory rate, consider "biological significance" (effect size!) as well as statistical significance.
+
+```{r}
+## examine model output here
+summary(fit3)
+```
+
++ Intercept interpretation
+For a microphylla tree (our baseline species) that has a leaf length of zero, we expect the respiratory rate is 0.176. This is highly significant with a p value of 2e-16. This does not make biological sense. 
++ species coefficient interpretation
+  + when controlling for leaf length, coefficients are the change from the baseline species.
+  + controlling for leaf length, oligodonta has an average respiratory rate 0.0039 lower than microphylla. But it is not signifcant, so effectively it is not different from microphylla.
++ leaf_len coefficient interpretation
+  + when controllling for species, the leaf length is ...?
++ $R^2$ interpretation
++ Model conclusion
+Explanatory power is zero. 
+
+Finally, make a stylish scatterplot of your findings:
+
++ Use your favorite ggplot theme and colors (it's allowed to like the default!)
++ Make sure to show a regression lines for EACH species. **NOTICE in theses lines** how they are consistent with your conclusions about species being a significant predictor. You do not have to write anything, just notice!
++ Include a meaningful title, along with a subtitle that is the fitted model itself, as well as other nice labels
++ Include a well-placed annotation that gives the model's $R^2$
+
+```{r}
+### stylish plot goes here
+ggplot(rowan, aes(x = leaf_len, y = respiratory_rate, color = species)) +
+  geom_point() +
+  geom_smooth(method = "lm") #there is a strong relationship from leaf length and species. slopes all overlap which is why it is not significant. confidence intervals are overlapping in the y axis. same consistent trend for species.
+```

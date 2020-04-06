@@ -1,0 +1,122 @@
+> crab
+# A tibble: 200 x 7
+   color sex   frontal_lobe rear_width carapace_length carapace_width
+   <chr> <chr>        <dbl>      <dbl>           <dbl>          <dbl>
+ 1 blue  M              8.1        6.7            16.1           19  
+ 2 blue  M              8.8        7.7            18.1           20.8
+ 3 blue  M              9.2        7.8            19             22.4
+ 4 blue  M              9.6        7.9            20.1           23.1
+ 5 blue  M              9.8        8              20.3           23  
+ 6 blue  M             10.8        9              23             26.5
+ 7 blue  M             11.1        9.9            23.8           27.1
+ 8 blue  M             11.6        9.1            24.5           28.4
+ 9 blue  M             11.8        9.6            24.2           27.8
+10 blue  M             11.8       10.5            25.2           29.3
+# … with 190 more rows, and 1 more variable: body_depth <dbl>
+> ggplot(crab, aes(x = carapace_length, y = body_depth)) +geom_point()
+Error in UseMethod("depth") : 
+  no applicable method for 'depth' applied to an object of class "NULL"
+> ggplot(crab, aes(x = carapace_length, y = body_depth)) +geom_point()
+> head(crab)
+# A tibble: 6 x 7
+  color sex   frontal_lobe rear_width carapace_length carapace_width
+  <chr> <chr>        <dbl>      <dbl>           <dbl>          <dbl>
+1 blue  M              8.1        6.7            16.1           19  
+2 blue  M              8.8        7.7            18.1           20.8
+3 blue  M              9.2        7.8            19             22.4
+4 blue  M              9.6        7.9            20.1           23.1
+5 blue  M              9.8        8              20.3           23  
+6 blue  M             10.8        9              23             26.5
+# … with 1 more variable: body_depth <dbl>
+> #lm(y/x)
+> lm(body_depth ~ carapace_length, data =crab) -> model_fit
+> lm(body_depth ~ carapace_length, data =crab) -> model_fit #this is a model!
+> summary(model_fit) #this is the way to look at your model
+
+Call:
+lm(formula = body_depth ~ carapace_length, data = crab)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.96587 -0.47864  0.07071  0.49976  1.43543 
+
+Coefficients:
+                Estimate Std. Error t value Pr(>|t|)    
+(Intercept)     -1.15527    0.20517  -5.631 6.09e-08 ***
+carapace_length  0.47300    0.00624  75.803  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.6266 on 198 degrees of freedom
+Multiple R-squared:  0.9667,	Adjusted R-squared:  0.9665 
+F-statistic:  5746 on 1 and 198 DF,  p-value: < 2.2e-16
+
+> #call tells you what you specified
+> #residuals is the five number summary
+> #this is not how we examine residuals
+> #ignore residuals line
+> #the coefficients is your model.
+> #our intercept is our beta0
+> # y = beta1*x + beta0
+> #the -1.15527 does not make any sense. It is nonsense. You will never have a body_depth that is 0 and a carapace_length that is negative. It does not make sense biologically but we need it for the purpose of the model
+> #null hypothesis is that it equals zero
+> #highly significant intercept
+> #carapace_length estimate is the slope. Rise over run. We see it is highly significant
+> #r gives stars to give level of signficants
+> #what is our alpha for signficiance. For the purpose of this document 0.05. Need to decide level of signficiance PRIOR to looking at the data. Needs to be 5% the whole time if you decide something
+> #ignore residual standard error. The larger it is, the worse the model is. The smaller it is, the better!
+> #Adjusted R-squared is the R-squared.
+> #R squared tells you how much y explains x
+> #1-0.96665. There is 3.35% that is UNEXPLAINED 
+> #residual is your ERROR
+> #need to check that residuals are normally distrubuted
+> library(broom) #need to do this
+> broom::tidy(model_fit)
+# A tibble: 2 x 5
+  term            estimate std.error statistic   p.value
+  <chr>              <dbl>     <dbl>     <dbl>     <dbl>
+1 (Intercept)       -1.16    0.205       -5.63 6.09e-  8
+2 carapace_length    0.473   0.00624     75.8  3.13e-148
+> broom::glance(model_fit)
+# A tibble: 1 x 11
+  r.squared adj.r.squared sigma statistic   p.value    df logLik   AIC
+      <dbl>         <dbl> <dbl>     <dbl>     <dbl> <int>  <dbl> <dbl>
+1     0.967         0.967 0.627     5746. 3.13e-148     2  -189.  385.
+# … with 3 more variables: BIC <dbl>, deviance <dbl>,
+#   df.residual <int>
+> broom::augment(model_fit)
+# A tibble: 200 x 9
+   body_depth carapace_length .fitted .se.fit   .resid    .hat .sigma
+        <dbl>           <dbl>   <dbl>   <dbl>    <dbl>   <dbl>  <dbl>
+ 1        7              16.1    6.46  0.109   0.540   0.0304   0.627
+ 2        7.4            18.1    7.41  0.0980 -0.00596 0.0244   0.628
+ 3        7.7            19      7.83  0.0930 -0.132   0.0220   0.628
+ 4        8.2            20.1    8.35  0.0870 -0.152   0.0193   0.628
+ 5        8.2            20.3    8.45  0.0860 -0.247   0.0188   0.628
+ 6        9.8            23      9.72  0.0721  0.0764  0.0132   0.628
+ 7        9.8            23.8   10.1   0.0682 -0.302   0.0118   0.628
+ 8       10.4            24.5   10.4   0.0649 -0.0331  0.0107   0.628
+ 9        9.7            24.2   10.3   0.0663 -0.591   0.0112   0.627
+10       10.3            25.2   10.8   0.0618 -0.464   0.00973  0.627
+# … with 190 more rows, and 2 more variables: .cooksd <dbl>,
+#   .std.resid <dbl>
+> #response column, our predictor column, and m ore
+> broom::augment(model_fit) -> augmented_fit
+> augmented_fit
+# A tibble: 200 x 9
+   body_depth carapace_length .fitted .se.fit   .resid    .hat .sigma
+        <dbl>           <dbl>   <dbl>   <dbl>    <dbl>   <dbl>  <dbl>
+ 1        7              16.1    6.46  0.109   0.540   0.0304   0.627
+ 2        7.4            18.1    7.41  0.0980 -0.00596 0.0244   0.628
+ 3        7.7            19      7.83  0.0930 -0.132   0.0220   0.628
+ 4        8.2            20.1    8.35  0.0870 -0.152   0.0193   0.628
+ 5        8.2            20.3    8.45  0.0860 -0.247   0.0188   0.628
+ 6        9.8            23      9.72  0.0721  0.0764  0.0132   0.628
+ 7        9.8            23.8   10.1   0.0682 -0.302   0.0118   0.628
+ 8       10.4            24.5   10.4   0.0649 -0.0331  0.0107   0.628
+ 9        9.7            24.2   10.3   0.0663 -0.591   0.0112   0.627
+10       10.3            25.2   10.8   0.0618 -0.464   0.00973  0.627
+# … with 190 more rows, and 2 more variables: .cooksd <dbl>,
+#   .std.resid <dbl>
+> qqnorm(augmented_fit$.resid)
+Error in plot.new() : figure margins too large

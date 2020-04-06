@@ -1,0 +1,369 @@
+---
+title: "ANSWERS: Working with untidy and tidy data"
+subtitle: "Data Science for Biologists, Spring 2020"
+author: "Paige Richards"
+output: 
+  html_document:
+    highlight: tango
+css: static/sjs-style.css
+params:
+  data_path: "data/"
+---
+
+<!-- SETUP CODE CHUNK -->
+```{r setup, include=FALSE}
+## Change the default figure width and height to your liking, but within reason.
+knitr::opts_chunk$set(echo = TRUE, fig.width=6, fig.height=3.5)
+library(tidyverse)
+library(kableExtra) # helpful to print fancy tables in RMarkdown
+library(ggforce)
+theme_set(theme_classic())  ### If you want to set a global theme, do so here
+```
+
+
+# <mark>Questions</mark>
+
+#### Preface Question
+
+Look at the YAML front matter: there is something NEW! Read about params [here](https://rmarkdown.rstudio.com/lesson-6.html). In this case we set a global parameter for the RMarkdown file that corresponds to the path where data lives! We can proceed to use this as a variable like so (always `params$`, like a column in a data frame!). Use this variable for your paths, e.g. `read_csv(paste0(params$data_path, <NAMEOFFILE>))`
+```{r}
+params$data_path
+```
+
+#### Question 1
+
+```{r}
+# Code chunk to read in and examine the data with head()
+read_csv(paste0(params$data_path, 'mcv_immunized_percent_of_one_year_olds.csv')) -> measles
+#file.path will allow you to format. It will add forwardslashes for you
+#file.path('data', 'example.csv')
+#'data/example.csv' This is the output it gives you
+#name_of_file <- file.path(data_path, 'mcv_immunized_percent_of_one_year_olds.csv')
+#name_of_file
+#measles <- read_csv(name_of_file) 
+#this is a small independent step and allows you to make the code more modular
+head(measles)
+```
+
+
+```{r}
+# Code chunk to convert data to tidy
+#measles %>%
+  #pivot_longer(1980:2011, names_to = 'year', values_to= 'percent') #this DOESN'T work because numbers need back ticks to be considered numbers
+measles %>%
+  tidyr::pivot_longer(`1980`:`2011`, names_to = 'year', values_to= 'percent') -> measles2
+
+measles2%>%
+  dplyr::filter(country== c('Argentina', 'Paraguay')) -> measles3 #go line by line. You need to specify country and need the double ==. Without adding country, filter didn't know where to look->measles2
+head(measles2)
+head(measles3)
+```
+#### Question 2
+
+```{r, fig.width= 12, fig.height= 4}
+# Code chunk to plot the data
+  ggplot(measles3, aes(x=year, y= percent ))+
+  geom_bar(stat= 'identity', aes(fill=country))+ #no need to put the x and y and fill in quotes. It messes everything up
+  labs(x='Year', y='Percent', fill='Country')+
+  theme(axis.title = element_text(size=15),
+        legend.title= element_text(size=15))+
+  scale_fill_manual(values=c('darkgreen', 'steelblue3')) #need scale fill manual AND need values to make this work. This adds color manually to a graph
+```
+
+<answer>
+Interesetingly, Argentina had a higher percentage of one year olds being vaccinated with measles in the 1980s but as time progressed, Paraguay began vaccinating more one year olds. Argentina did not have a huge change in the number of vaccinated one year olds after 1990s. There is some fluctuation but not much after this point. From 1980 to 1990 in Argentina, the rate increased. This increase of one year olds being vaccinated with measles also increased in Paraguay from 1980 to 1993. In 1994 to 1997, there was a significant decrease and it would be interesting to learn why that occurred. After, 1997, the rates increased and have been steady since 2001. There is a large difference in the history of vaccination of one year olds with measles between Argentina and Paraguay.
+</answer>
+
+#### Question 3
+
+
+```{r}
+#like one from the last homework. Make sure they are distinguished of what row is what
+# Code chunk to read in and examine the data with head()
+read_csv(paste0(params$data_path, 'dtp3_immunized_percent_of_one_year_olds.csv')) -> diphtheria
+head(diphtheria)
+```
+
+
+```{r}
+# Code chunk to convert data to tidy and combine with question 1 data
+diphtheria%>%
+  pivot_longer(`1980`:`2011`, names_to = 'year', values_to= 'percent') %>%
+   mutate(vaccine = 'Diphtheria') -> diphtheria2
+
+measles2 %>%
+  mutate(vaccine = 'Measles') %>%
+  bind_rows(diphtheria2)%>%
+  mutate(year = as.numeric(year)) -> combined_measles_diphtheria
+
+combined_measles_diphtheria %>%
+  filter(country== 'Georgia', year %in% 2005:2011) -> combined_measles_diphtheria2
+  #need %in% not ==, if you want to filter, you want to check for something that's true or false and filter will keep what's true. You do not want to state something that is equal to
+
+head(combined_measles_diphtheria) #only shows a TINY portion of the data. There are over 12,000 rows so it is important to check that the diphtheria vaccine is actually there
+head(combined_measles_diphtheria2)
+#should check if it has diphtheria which is what is done below. Can;t check with your eyeballs
+
+#combined_measles_diphtheria %>%
+  #filter(vaccine=='diphteria')%>%
+ # tally() %>% #can't leave it at just tally because this is still a dataframe
+  #pull(n) this is the same as below. Pull as a reminder turns a dataframe into an array
+
+#combined_measles_diphtheria %>%
+  #filter(vaccine=='diphteria')%>%
+  #nrow() #nrow makes the number of rows into an array 
+
+
+combined_measles_diphtheria %>% 
+  filter(vaccine=='Diphteria')%>%
+  nrow() -> assertion_check #As a reminder, dplyr inputs and outputs datafames ONLY, without using nrow or pull, the assertion couldn't work properly below. I needed to make it into an array to be assessed. 
+
+#practice making an assertion check
+if (assertion_check != 0){
+  stop('something went wrong!') } #assertion to make sure that the combined_measles_diphtheria has diphtheria in it in the vaccine column
+head(combined_measles_diphtheria2)
+```
+
+```{r}
+# Code chunk to plot the data
+ggplot(combined_measles_diphtheria2, aes(x=year, y=percent))+
+  geom_bar(aes(fill=vaccine), stat='identity', position= 'dodge')+
+  labs(fill="Vaccine", 
+       y= 'Percent',
+       x= 'Year')+
+  theme(axis.text = element_text(angle=10))+ #just wanted to try making an angled axis plot
+  scale_fill_manual(values= c('turquoise2', 'thistle1'))
+```
+
+<answer>
+Overall, there is not very much difference between Diphtheria and Measles vaccination. Measles is slightly higher than Diphtheria until 2009. Although, whether the difference is signficiant or not would require a statistical test.
+</answer>
+
+#### Question 4
+
+
+```{r}
+# Code chunk to read in and examine the data with head()
+seals <- read_csv(paste0(params$data_path,'seals.csv'))
+head(seals)
+```
+
+
+```{r}
+# Code chunk for distributions (violin, sina, etc.)
+# If sina make sure to load `ggforce()` in SETUP CHUNK!
+
+new_level<- c('Yes','No')
+seals%>%
+  dplyr::mutate(feeding_better= factor(feeding, levels= new_level))%>%
+ggplot(aes(x=feeding_better, y=oxygen_use))+
+  geom_sina(aes(color=feeding_better), size=3)+
+  labs(color='Feeding',
+       y= 'Oxygen Use',
+       x= 'Feeding')+
+  scale_color_manual(values=c('seagreen4', 'springgreen2'))
+```
+
+```{r}
+# Code chunk for data un-tidying and scatterplot
+seals%>%
+  pivot_wider(names_from ='feeding',
+              values_from = 'oxygen_use') -> seals_untidy
+head(seals_untidy)
+
+ggplot(seals_untidy, aes(x= No, y= Yes))+
+  geom_point(color= 'skyblue3')+
+  geom_abline(color= 'sienna2')+ #creates a line in the data that represents y=x so that it is symbolizing they represent equal values
+  labs(x= 'Oxygen Use When Not Feeding',
+       y= 'Oxygen Use When Feeding')+
+  annotate('label', x= 60, y=48, label= 'y=x')+ #you need to specify some sort of geom here. I chose label which conveniently enough made an outline around my text. This put a text box next to my line to show what it represents. x and y specify where I would want it to go. This is a layer on top of the graph and doesn't particularly associate with the line. I put it there as an extra layer
+  xlim(0, NA)+
+  ylim(0,NA) #do not need to set an upper limit! When you had it has ylim(0,150) it didn't want the upper lim. You just need to specify lower limit.
+```
+
+<answer>
+From the sina plot created, I do not think you can definitely state that oxygen use increased when seals where feeding. The sina plots overlap by what appears visually to be a significant amount. There are some points where the oxygen was lower in No than in Yes for two seals and there were some points that were higher in Yes than in No for three seals. I do not think this is enough evidence to confirm the researchers' prediction. The scatterplot shows some difference than the violin plot I created. The line in the graph is not quite at a 45 degree angle showing that there is some variance between the Yes and the No of oxygen use. This does show more concretely that the oxygen use when feeding is increased than when not feeding. I think this gives more sufficient evidence to the researchers' prediction.
+</answer>
+
+#### Question 5
+
+
+```{r}
+# Code chunk to read in and examine the data with head()
+#just run the code AND DO NOT OVERTHINK 
+planets <- read_csv2(paste0(params$data_path, 'planets.csv'))
+head(planets)
+planets %>% separate_rows(terrain) #now work on this and figure out what separate_rows is doing and then apply it. This is really cool! There were multiple categories in terrain separated by commas and separate_rows made each one of those into its own row! 
+```
+
+
+```{r}
+# Code chunk for tidying
+# HINT: it's literally just piping data into separate_rows twice, one for the column given in the question, and for the second you need to figure out the column.
+## DO NOT OVERCOMPLICATE THIS QUESTION. 
+planets %>%
+  separate_rows(terrain)%>% #separate **usually** makes things more tidy. unite makes things less tidy **usually**
+  separate_rows(climate) -> planets2 #cannot do it in the same separate_rows. Need a new pipe per separate row!
+head(planets2)
+```
+
+
+#### Question 6
+
+```{r}
+# Code chunk for allllll the wrangling and tidying
+# should END UP as a single piped command - but build it up LINE AT A TIME! 
+
+#planets2%>%
+  #separate(edited, into= c("edited_date", "edited_time"), tz = "UTC") #the problem is the data is separated by something that looks like a T. When doing this without the tz=UTC it discards so much data because it thinks everything is being separated by dashes. I don't know how to change this. Also, we aren't using separate_rows here! Separate_rows makes a collapsed row with multiple data points in one cell, into still one row with only one data point per cell. separate will make this row into two separate columns.
+
+#planets2%>%
+  #separate(edited, into= c("edited_date", "edited_time"), sep='T') %>%
+  #mutate(ratio_period_rotation_orbital,  rotation_period/orbital_period)#this doesn't work with the comma. Why? You are not saying that the new column is equal to what is after the column. I think it is assuming that what you want in the new column is in rotation_period and then it doesn't know what to do with the backslash after. Either way, this didn't work because you needed to set the new column to equal whatever you wanted. In this case, we wanted a ratio!
+
+#planets2%>%
+  #separate(edited, into= c("edited_date", "edited_time"), sep='T') %>% #it is separated by a T so you need to tell the function that or else it assumes you are separating by something else.
+  #mutate(ratio_period_rotation_orbital =  rotation_period/orbital_period) %>% #this creates a ratio! Needed to set new column to equal the ratio!
+  #unite("name_pop", name:population, sep= "-") #this took every row and united it into one column. I united but not correctly. This is because I used the : which did name through population to unite every column through there. I only wanted name & population. 
+
+planets2%>%
+  tidyr::separate(edited, into= c("edited_date", "edited_time"), sep='T') %>%
+  dplyr::mutate(ratio_period_rotation_orbital =  rotation_period/orbital_period) %>%
+  tidyr::unite("name_pop", name, population, sep= "-") %>% #need a comma to do name and population! The & sign didn't work because that means something else in R! If you leave a pipe %>% at the end of this line without piping into anything, you're going to have a fatal crash and wonder "why is this happening?". Don't leave a pipe if you aren't piping into anything!
+  dplyr::filter(terrain== "mountains")%>%
+  dplyr::arrange(desc(ratio_period_rotation_orbital)) -> final_planets_tidy_dataset #looked up the rdocumentation on how to make it descending and it is just a command! It is desc and then choose the variable you want to arrange in descending order. 
+  
+final_planets_tidy_dataset #I was really proud of myself for figuring this out by only using r resources and logical reasoning and catching all my bugs and working them out slowly! Going line by line is truly the best method for finding all the bugs and learning the most information!
+```
+
+
+#### Question 7
+
+
+```{r}
+## defines each column as an array
+tibble(
+  color        = c("blue", "green", "turquoise"),
+  male         = c(25, 36, 52),
+  female       = c(28, 17, 33),
+  species_abbr = c("sp1", "sp1", "sp1")
+) -> frogs_sp1
+
+## defines tibble in a format like the tibble would end up appearing
+## spacing is helpful!
+tribble(
+  ~color, ~male, ~female, ~species_abbr,
+  "orange", 13,   17,    "sp2",
+  "red",    45,   36,    "sp2",
+  "pink",  31,    25,    "sp2"
+) -> frogs_sp2
+
+## Like strategy one
+tibble(
+  species_name = c("Frogus firstus", "Frofus secondus"),
+  species_abbr = c("sp1", "sp2")
+) -> species_names
+
+### ADD CODE HERE TO PRINT OUT THESE THREE DATASETS!!! YOU HAVE TO LOOK AT THEM TO USE THEM!!
+frogs_sp1
+
+frogs_sp2
+
+species_names
+```
+
+
+
+```{r}
+# Code chunk to tidy and combine the three datasets
+frogs_sp1%>%
+  bind_rows(frogs_sp2) %>%
+  left_join(species_names)%>%
+  select(-species_abbr)%>%
+  pivot_longer(male:female, names_to = 'sex', values_to = 'number')%>% #pivot longer combined the columns male and female into one column sex and moved the values within them to number for number of frogs
+  separate(species_name, into=c("Genus", "Species")) -> joined_frogs_tibble #do not need to use the sep="" because tidyr already assumes they are separated by spaces! When using, sep="" it did not put any data into the Genus or Species column!
+
+joined_frogs_tibble
+```
+
+```{r}
+# Code chunk to for dplyr task 1
+joined_frogs_tibble%>%
+  dplyr::filter(sex=="female", color %in% c('green', 'blue'), Species== 'firstus') %>%
+  dplyr::group_by(color) %>% 
+  dplyr::summarize(sum(number)) #The last two operations are not needed but this provided the fewest number of columns in the data set. I could have also removed the columns using select. I chose to do it this way instead.
+
+```
+
+<answer>
+There are more female blue frogs than female green frogs from the species Frogus firstus.
+</answer>
+```{r}
+# Code chunk to for dplyr task 2
+joined_frogs_tibble %>%
+  dplyr::filter(sex=='male')%>%
+  dplyr::group_by(Species)%>%
+  dplyr::summarise(sum(number))
+```
+
+<answer>
+There are more male frogs in the firstus species than in the secondus species.
+</answer>
+
+```{r}
+# Code chunk to for dplyr task 3
+joined_frogs_tibble %>%
+  tidyr::pivot_wider(names_from = 'sex', values_from = 'number')%>%
+  dplyr::filter(Species== 'secondus') %>%
+  dplyr::select(color, male, female) %>% #need to first subset the data to the rows of interest. Then we do the operations we want!
+  dplyr::mutate(ratio_male_female = male/female)%>%
+  dplyr::select(color, ratio_male_female) %>%
+  dplyr::arrange(desc(ratio_male_female))
+  
+```
+
+<answer>
+Red frogs have the highest male to female ratio in the Frogus secondus species than any other color.
+</answer>
+
+#### Question 8
+you must add least TWO CUSTOMIZED features on top of that baseline - have fun!! Always make sure to KNIT to see the final output - the “preview” output can be misleading.
+
+I strongly encourage (but do not require) you to color rows based on the frog color! You can’t really automate this in R; you need to know which rows to color a priori as described in the link above.
+```{r}
+# Code chunk for kable()
+#pipe into kable and make it has pretty as possible
+joined_frogs_tibble %>%
+  rename(Frog_color = color)%>%
+  mutate(Frog_color = cell_spec(Frog_color, bold=T, color = 'aliceblue'))%>%
+  mutate(number = cell_spec(number, angle=20, color= 'ivory', background= spec_color(1:12))) %>%
+  kable(escape= F) %>%
+  kable_styling('striped') %>%
+  row_spec(1:2, color='aliceblue', background= 'blue') %>%
+  row_spec(3:4, color= 'aliceblue', background = 'green') %>%
+  row_spec(5:6, background = 'turquoise', color='aliceblue') %>%
+  row_spec(7:8, background = 'orange', color='aliceblue') %>%
+  row_spec(9:10, background = 'red', color='aliceblue') %>%
+  row_spec(11:12, background = 'pink', color='aliceblue')
+```
+
+#### BONUS QUESTION
+
+*Add your own chunks if you choose to do this adventure.*
+```{r, fig.width= 20}
+hydro_power <- read_csv(paste0(params$data_path, 'hydro_power_generation_total.csv'))
+hydro_power
+hydro_power %>%
+  pivot_longer(`1960`:`2011`, names_to= 'Year', values_to= 'Amount') -> hydro_power_tidy #need to use backticks
+hydro_power_tidy
+hydro_power_tidy %>%
+  filter(country %in% c('Australia', 'France', 'Greece'))%>%
+  ggplot(aes(x= Year, y=Amount))+
+  geom_bar(stat='identity',aes(fill=country), position= 'dodge')+
+  labs(fill='Country')+
+  scale_fill_manual(values= c('violetred', 'steelblue3', 'orchid4'))
+```
+
+<answer>
+It is clear that between these three countries, France has **always** used more hydro power generation in total than both Greece and Australia. Greece uses the least amount of hydro power generation.
+</answer>

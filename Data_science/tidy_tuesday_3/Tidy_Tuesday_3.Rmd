@@ -1,0 +1,70 @@
+---
+title: "Tidy Tuesday Week 10"
+author: "Paige Richards"
+date: "3/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(emojifont)
+library(ggridges)
+library(devtools)
+library(tidytuesdayR)
+library(viridis)
+library(viridisLite)
+theme_set(theme_classic())
+```
+
+**For this week of TidyTuesday, I want to consider the plot from two different angles to learn two different skills:**
+
++ ggridges
++ emojifonts
+
+Below, you will find the set up chunk for importing the data set. It is also printed to be able to view in the knitted document. I am going to look at the season goals for the year and I am importing the data using [this link](https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-03/season_goals.csv).  
+
+```{r, importing data chunk}
+#tidytuesdayR::tt_load(2020, week=10) ->  nhl
+#nhl$season_goals -> nhl_tibble
+#nhl_tibble
+  #This unfortunately only gave me the html of the tidytuesday data. Likely, I imported the dataset wrong
+read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-03/season_goals.csv') -> season_goals_nhl
+season_goals_nhl
+```
+
+```{r, wrangled data}
+season_goals_nhl %>%
+  dplyr::filter(status=='Active') -> wrangled_data_nhl
+```
+
+```{r, ggridge practice}
+wrangled_data_nhl %>%
+  group_by(player)%>%
+  mutate(mean_goals = mean(goals)) -> wrangled_data_nhl_2
+ggplot(wrangled_data_nhl_2, aes(y=fct_reorder(player, goals), x=goals))+
+         geom_density_ridges2(aes(fill=mean_goals), scale=1.8, alpha=0.8)+ #rel_min_height can change the trailing lines to be shorter. It looks stupid here. Scale can make it so they don't overlap (less than 1) but I like them overlapping.
+  labs(y= 'Player',
+       x= 'Goals')+
+  scale_fill_viridis()+
+  theme(legend.position='none', plot.title = element_text(size = rel(2.8)), axis.title=element_text(size=rel(2)), axis.text= element_text(size=rel(1.5)), axis.ticks.length.x= unit(0.3, "cm"), axis.ticks.length.y=unit(0.3, 'cm'))-> ggridges_nhl_plot
+ggridges_nhl_plot
+ggsave('ggridges_nhl_plot.png', ggridges_nhl_plot,width = 5, height=7)
+```
+
+
+```{r, emoji practice}
+ggplot(wrangled_data_nhl, aes(y=goals, x=goals_game_winner,label=emoji('heart'), color=position), replace=TRUE)+ #discovered trophy was NOT a good emoji to use. Hearts are better because we heart hockey. Why does it fill in on the knitted document but not here? I have no idea
+  geom_text(family='EmojiOne', size=5)+
+  facet_grid(~hand)+
+  labs(x='Goals Game Winner',
+       y='Goals',
+       color='Position')+
+  scale_color_manual(values = c('green', 'pink', 'blue'))-> emoji_nhl_plot
+emoji_nhl_plot
+ggsave ("emoji_nhl_plot.jpeg", emoji_nhl_plot)
+```
+
+<answer>
+It was really exciting to learn ggridges and emojifont. I feel like ggridges is such a useful graph for comparisons. In this one you can really see who gets more goals per actvive player which I like a lot. It was difficult to figure out how to wrangle this data because there were so many rows and it was hard to be able to see them all. I also liked trying to learn emojifont again. It was interesting trying to figure out what works and what doesn't work. I don't think I am 100% clear on this function but I think that what was produced was nice. I'm not sure how informative the graph was but I am hoping to gain some more experience with it and learn more about it. Overall, I feel like I have gained new skills with ggridges and emojifont. Additionally, I am learning how to write in HTML format for Rmarkdown files which is exciting as well!
+</answer>

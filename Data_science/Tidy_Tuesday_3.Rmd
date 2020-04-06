@@ -1,0 +1,48 @@
+---
+title: "Tidy Tuesday Week 10"
+author: "Paige Richards"
+date: "3/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggimage)
+library(emojifont)
+library(ggridges)
+library(devtools)
+library(tidytuesdayR)
+theme_set(theme_classic())
+```
+
+**For this week of TidyTuesday, I want to consider the plot from two different angles to learn two different skills:**
+
++ ggridges
++ emojifonts
+
+Below, you will find the set up chunk for importing the data set. It is also printed to be able to view in the knitted document. I am going to look at the season goals for the year and I am importing the data using [this link](https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-03/season_goals.csv).  
+
+```{r, importing data chunk}
+#tidytuesdayR::tt_load(2020, week=10) ->  nhl
+#nhl$season_goals -> nhl_tibble
+#nhl_tibble
+  #This unfortunately only gave me the html of the tidytuesday data. Likely, I imported the dataset wrong
+read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-03/season_goals.csv') -> season_goals_nhl
+season_goals_nhl
+```
+
+```{r, ggridges practice}
+season_goals_nhl %>%
+  dplyr::filter(status=='Active') -> wrangled_data_nhl
+```
+
+```{r, emoji practice, fig.width=8, fig.height= 6}
+ggplot(wrangled_data_nhl, aes(y=goals, x=goals_game_winner,label=emoji('trophy'), color=position), replace=TRUE)+
+  geom_text(family='EmojiOne', size=5)+
+  facet_grid(~hand)+
+  labs(x='Goals Game Winner',
+       y='Goals',
+       color='Position')+
+  scale_color_manual(values= c('black', 'purple4', 'red4'))
+```
