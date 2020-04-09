@@ -12,6 +12,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(broom) 
+theme_set(theme_classic())
 ```
 
 ## Instructions
@@ -63,12 +64,14 @@ Now that you have confirmed the relationship is linear (hint: it is linear), bui
 ### build model and check normal residuals
 ### do not look at the model summary yet!
 #MUST BE Y~X
-lm(respiratory_rate ~ altitude, data = rowan) -> fit #need to look at residuals
+lm(respiratory_rate ~ altitude, data = rowan) -> fit #need to look at residuals. This is a linear model!
+
 #get residuals
-broom::augment(fit, rowan) -> aug_fit #give it the model and then the data
-#21 is closed circle instead of closed circle
+broom::augment(fit, rowan) -> aug_fit #give it the model and then the data. We defined fit above and rowan is the data set! Augment is the function that gets the residuals
+
+#21 is an open closed circle instead of closed circle. 19 is closed circle. pch defines which shape type you choose.
 qqnorm(aug_fit$.resid, pch = 21)
-qqline(aug_fit$.resid, col = "dodgerblue")
+qqline(aug_fit$.resid, col = "dodgerblue") #together these make a qq plot. Why don't you need to have a plus sign like in ggplot? How does it know these are together?
 ```
 
 
@@ -80,18 +83,13 @@ summary(fit)
 
 ```
 
-+ Intercept interpretation
-When altitude is zero, the respiratory rate is 8.386e-03. This is the intercept interpretation. This makes sense biologically, but since the p value is at 0.622, there is no evidence that the intercept differs from 0. 
-+ altitude coefficient interpretation
-For every unit increase in altitude, we expect the respiratory rate to increase by 3.025e-04. This is highly significant because the p value is 2.66e-14. We can then reject the null that the coefficient is 0.
-+ $R^2$ interpretation
-We are using the adjusted $R^2$ which is 0.1743. This tells us that 17.43% of variation in respiratory rate is explained by this model, which is included only with altitude is the predictor. This is highly significant at 2.66e-14. This means that 82.57% of variation in respiratory rate is not explained or unexplained by the data. 
-+ Model conclusion
-It is a signficiant model but it has weak explanatory power. There is a lot of error. We are sure that the R^2 is NOT zero but it is VERY far from zero so this means that it has a weak explanatory power. 
++ **Intercept interpretation:** When altitude is zero, the respiratory rate is 8.386e-03. This is the intercept interpretation. This makes sense biologically because you can be an altitude of zero. This is sea level. However, since the p value is at 0.622, there is no evidence that the intercept differs from 0. A p value is significant at 0.05 or less
++ **Altitude coefficient interpretation:** For every unit increase in altitude, we expect the respiratory rate to increase by 3.025e-04. This is highly significant because the p value is 2.66e-14. We can then reject the null that the coefficient is 0.
++ **$R^2$ interpretation:** We are using the adjusted $R^2$ which is 0.1743. This tells us that 17.43% of variation in respiratory rate is explained by this model, which is included only with altitude as the predictor. This is highly significant at 2.66e-14. Additionally, this means that 82.57% of variation in respiratory rate is not explained or unexplained by the model. 
++ **Model conclusion:** It is a signficiant model but it has weak explanatory power. There is a lot of error and a lot of the data that **cannot** be explained by the model. We are sure that the $R^2$ is **not** zero but it is not **very** far from zero so this means that it has a weak explanatory power. 
 
-This is the equation of the line. 
-y + 3.025e-0.4x + 8.386e-03
-Should look at how small the number this is based on the scale of the data. Order of magnitude defines an order of 10. X is altitude
+This is the equation of the line: y + 3.025e-0.4x + 8.386e-03
+We should look at how small the number this is based on the scale of the data. Order of magnitude defines an order of 10. X is altitude.
 
 Finally, make a stylish scatterplot of your findings. Your scatterplot should:
 
@@ -100,10 +98,10 @@ Finally, make a stylish scatterplot of your findings. Your scatterplot should:
 + Include a meaningful title, along with a subtitle that is the fitted model itself, as well as other nice labels
 + Include a well-placed annotation that gives the model's $R^2$
 
-```{r}
+```{r, fig.width = 6, fig.height = 4}
 ### stylish plot goes here
 ggplot(rowan, aes(x = altitude , y = respiratory_rate)) +
-  geom_point() +
+  geom_point(color = "forestgreen") +
   labs(title = "Regression of Respiratory Rate against Altitude",
        subtitle = "y + 3.025e-0.4x + 8.386e-03") +
   geom_smooth(method = "lm") + #less data by the top and bottom. Default confidence interval is 95%.
@@ -111,7 +109,9 @@ ggplot(rowan, aes(x = altitude , y = respiratory_rate)) +
            y = 0.35,
            x = 200,
            label = "R^2 == 0.1743",
-           parse = T)
+           parse = T) +
+  labs(x = "Altitude",
+       y = "Respiratory Rate")
 ```
 
 
@@ -130,7 +130,7 @@ Make a quick plot (use `geom_point()`, seriously, not even a jitter!!) to make s
 #all anovas are linear regressions but with categorical predictor
 #the assumption that we need to check. We need equal variance. 
 ggplot(rowan, aes(x = species, y = respiratory_rate)) +
-  geom_point() #this shows equal variance. The space is all about the same. The assumption is met and now we are good. If i know what species that I am, do I know what 
+  geom_point() #this shows equal variance. The spread is all about the same. The assumption is met and now we are good. Although, it is important to note that we did not REQUIRE them to be all the same. The fact that they are all the same is likely that they are not different from each other. We are just trying to see if the spread is the same (ie. variation). We are able to confirm spread using a geom_point scatterplot! Also, when we say that we want to see how species might explain variation in respiratory rate, we are saying that species is the x and respiratory rate is the y!
 ```
 
 
@@ -140,11 +140,13 @@ Now that you have confirmed the variance is equal across groups (hint: it is), b
 ### build model and check normal residuals
 ### do not look at the model summary yet!
 lm(respiratory_rate ~ species, data = rowan) -> fit2 #need to look at residuals
+
 #get residuals
 broom::augment(fit2, rowan) -> aug_fit2 #give it the model and then the data
-#21 is closed circle instead of closed circle
-qqnorm(aug_fit2$.resid, pch = 19)
+#21 is an open circle instead of closed circle. 19 is a closed circle.
+qqnorm(aug_fit2$.resid, pch = 19) 
 qqline(aug_fit2$.resid, col = "goldenrod")
+#need the augment model with the dollar sign and .resid to get the residuals. They are rougly normal here. The tails swing out a but at the end but not too much that we cannot consider it normal!
 ```
 
 Now that you have confirmed the residuals are roughly normally distributed (hint: they are), examine the output from your linear model. In the space below the code chunk, discuss in *bullet form* (1-2 sentences each): a) Provide an interpretation of the intercept, b) Provide an interpretation of the species coefficient, c) Provide an interpretation of the $R^2$ value, and finally d) Conclude whether species is a strong or weak predictor of respiratory rate, consider "biological significance" (effect size!) as well as statistical significance.
@@ -156,16 +158,12 @@ summary(fit2)
 #unique(rowan#species) #not a factor so it assumes alphabetical order. We know it's microphylla because it is the only one that has a coefficient
 ```
 
-+ Intercept interpretation
-The species is never zero. What is y when x is baseline? For microphylla trees, we expect a mean of respiratory rate of 0.148680. Microphylla is zero. This is highly significant with a p value is 2e-16. The intercept is definitely not zero. Categorical is relative to the baseline.
-+ species coefficient interpretation
-There are two species coefficient. They tell you what each one is to the baseline which is microphylla. 
-  + For the first one, we expect, on average, oligodonta trees have a respiratory rate 0.018830 lower than microphylla. It is compared to the microphylla as the baseline. However, this is NOT significant with a p value of 0.0995, so there is no evidence that it differs from zero.
-  + For the second one, we expect, sargentiana trees have a respiratory rate 0.006180 lower than microphylla. However, this is NOT significantly different with a p value of 0.5880
-+ $R^2$ interpretation
-$R^2 = 0.002792$ which is not significant with a p value of 0.2437. 
-+ Model conclusion
-This is no explanatory evidence which means this is an entirely uninformative model. 
++ **Intercept interpretation:** The intercept does not make biological sense because a species is never zero. The model fit chooses alphabetically what is the baseline; in this case, it is microphilia. For microphylla trees, we expect a mean of respiratory rate of 0.148680 when microphylla is zero. We can tell that this is highly significant since there is a p value is 2e-16. This means that the intercept is definitely not zero. For all categorical data, the intercept is relative to the baseline.
++ **Species coefficient interpretation:** There are two species coefficient. They tell you what each one is relative to the baseline which, again, is microphylla. 
+  + For the first one, we expect, on average, that oligodonta trees have a respiratory rate 0.018830 lower than microphylla. It is compared to the microphylla as the baseline. However, this is **not** significant with a p value of 0.0995, so there is no evidence that it differs from zero.
+  + For the second one, we expect, sargentiana trees have a respiratory rate 0.006180 lower than microphylla. However, again, this is **not** significantly different with a p value of 0.5880.
++ **$R^2$ interpretation:** $R^2$ = 0.002792 which is not significant with a p value of 0.2437. 
++ **Model conclusion:** There is no explanatory evidence which means this is an entirely uninformative model. 
 
 
 Finally, make a stylish figure of your findings, choosing your own geom!
@@ -175,10 +173,20 @@ Finally, make a stylish figure of your findings, choosing your own geom!
 + Include a meaningful title, along with a subtitle that is the fitted model itself, as well as other nice labels
 + Include a well-placed annotation that gives the model's $R^2$
 
-```{r}
+```{r, fig.width = 6, fig.height = 4}
 ### stylish plot goes here
 ggplot(rowan, aes(x = species, y = respiratory_rate))+
-  geom_boxplot(color = c("blue", "green", "pink"))
+  geom_boxplot(color = c("blue", "green", "pink"), fill = "aliceblue") +
+  labs(title = "Regression of Respiratory Rate against Species",
+       subtitle = "y = -0.018830x1 - 0.006180x2 + 0.148680") +
+  geom_smooth(method = "lm") + #less data by the top and bottom. Default confidence interval is 95%.
+  annotate("text",
+           y = 0.45,
+           x = 1,
+           label = "R^2 == 0.002792",
+           parse = T) +
+  labs(x = "Species",
+       y = "Respiratory Rate")
 
 ##another way to do this. If you cannot see the standard error, it means it is small
 #ggplot(rowan, aes(x = species, y = respiratory_rate))+
@@ -227,16 +235,14 @@ Now that you have confirmed the residuals are roughly normally distributed (hint
 summary(fit3)
 ```
 
-+ Intercept interpretation
-For a microphylla tree (our baseline species) that has a leaf length of zero, we expect the respiratory rate is 0.176. This is highly significant with a p value of 2e-16. This does not make biological sense. 
-+ species coefficient interpretation
-  + when controlling for leaf length, coefficients are the change from the baseline species.
-  + controlling for leaf length, oligodonta has an average respiratory rate 0.0039 lower than microphylla. But it is not signifcant, so effectively it is not different from microphylla.
-+ leaf_len coefficient interpretation
-  + when controllling for species, the leaf length is ...?
-+ $R^2$ interpretation
-+ Model conclusion
-Explanatory power is zero. 
++ **Intercept interpretation:** For a microphylla tree, which is our baseline species, that has a leaf length of zero, we expect the respiratory rate of 0.175923 which is highly significant because the p value is 2e-16. However, this does not make any biological sense. We cannot have a species at zero.
++ **Species coefficient interpretation:**
+  + When controlling for leaf length, the coefficients are the change from the baseline species.
+    + Controlling for leaf length, oligodonta species has an average respiratory rate of 0.003898 lower than microphylla. But it is not signifcant with a p value of 0.7713. Effectively, this means that it is not different from microphylla.
+    + Controlling for leaf length, sargentiana has an overage respiratory rate of 0.050740 higher than microphylla. Again, this is not significant because the p value is 0.0864.
++ **Leaf length coefficient interpretation:** When controllling for species, the leaf length is 0.003054 less than the base line of microphylla. This is significant with a p value of 0.0375
++ **$R^2$ interpretation:** The $R^2$ value is 0.01398. This means that this model can explain 1.398% of the data. 98.602% of the data is unexplained by this model. Additionally, our p value is 0.06687 which shows that our $R^2$ value is **not** significant
++ **Model conclusion:** Effectively, the explanatory power of this model is zero. 
 
 Finally, make a stylish scatterplot of your findings:
 
@@ -245,9 +251,21 @@ Finally, make a stylish scatterplot of your findings:
 + Include a meaningful title, along with a subtitle that is the fitted model itself, as well as other nice labels
 + Include a well-placed annotation that gives the model's $R^2$
 
-```{r}
+```{r, fig.width = 6, fig.height = 4}
 ### stylish plot goes here
 ggplot(rowan, aes(x = leaf_len, y = respiratory_rate, color = species)) +
   geom_point() +
-  geom_smooth(method = "lm") #there is a strong relationship from leaf length and species. slopes all overlap which is why it is not significant. confidence intervals are overlapping in the y axis. same consistent trend for species.
+  geom_smooth(method = "lm") + #there is a strong relationship from leaf length and species. slopes all overlap which is why it is not significant. confidence intervals are overlapping in the y axis. same consistent trend for species.
+  labs(title = "Regression of Respiratory Rate against Leaf Length and Species",
+       subtitle = "y = -0.003898x1 + 0.050740x2 - 0.003054x3 + 0.175923") +
+  geom_smooth(method = "lm") + #less data by the top and bottom. Default confidence interval is 95%.
+  annotate("text",
+           y = 0.45,
+           x = 15,
+           label = "R^2 == 0.01398",
+           parse = T) +
+  labs(x = "Leaf Length",
+       y = "Respiratory Rate",
+       color = "Species") +
+  scale_color_manual(values = c("dodgerblue", "forestgreen", "purple"))
 ```

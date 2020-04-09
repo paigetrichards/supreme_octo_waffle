@@ -1,0 +1,13 @@
+Notes from class
+MUST GO LINE BY LINE
+Work on test cases:
+-want to do something on a data frame that is huge:
+	-randomly downsample to ten rows and three columns and run code on that smaller sample, then you can look at if your code works. If it works right, then you can do it on a larger data set
+	-dplyr allows you to randomly subset a dataset using sample_n if you did sample_n(3) it will sample three rows
+	-always need to have checkpoints in code (WHAT NEEDS TO BE TRUE AT THIS POINT LIKE x=0 at this point. 
+-NEVER INSTALL ANYTHING IN AN Rmarkdown file or Rscript file
+-Don’t need quotes for tidy verse
+-may need pull
+-mean is a data frame 
+-Pull can make a data frame into an array
+-PULL TO MAKE A SUM ZERO for homework
