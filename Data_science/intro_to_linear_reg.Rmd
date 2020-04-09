@@ -3,8 +3,9 @@ title: "Introduction to linear regression"
 subtitle: "Data Science for Biologists, Spring 2020"
 author: "Paige Richards"
 output: 
-  html_document:
-    highlight: tango
+  html_document: 
+    theme: readable
+    highlight: espresso
 ---
 
 
@@ -83,10 +84,10 @@ summary(fit)
 
 ```
 
-+ **Intercept interpretation:** When altitude is zero, the respiratory rate is 8.386e-03. This is the intercept interpretation. This makes sense biologically because you can be an altitude of zero. This is sea level. However, since the p value is at 0.622, there is no evidence that the intercept differs from 0. A p value is significant at 0.05 or less
-+ **Altitude coefficient interpretation:** For every unit increase in altitude, we expect the respiratory rate to increase by 3.025e-04. This is highly significant because the p value is 2.66e-14. We can then reject the null that the coefficient is 0.
-+ **$R^2$ interpretation:** We are using the adjusted $R^2$ which is 0.1743. This tells us that 17.43% of variation in respiratory rate is explained by this model, which is included only with altitude as the predictor. This is highly significant at 2.66e-14. Additionally, this means that 82.57% of variation in respiratory rate is not explained or unexplained by the model. 
-+ **Model conclusion:** It is a signficiant model but it has weak explanatory power. There is a lot of error and a lot of the data that **cannot** be explained by the model. We are sure that the $R^2$ is **not** zero but it is not **very** far from zero so this means that it has a weak explanatory power. 
++ **Intercept interpretation:** When altitude is zero, the respiratory rate is $8.386 \times 10^{-3}$.  This makes sense biologically because you can be at an altitude of zero. This is considered sea level. However, since the p value is at 0.622, there is no evidence that the intercept differs from 0. A p value is significant at 0.05 or less. Therefore, the intercept is not significant.
++ **Altitude coefficient interpretation:** For every unit increase in altitude, we expect the respiratory rate to increase by $3.025 \times 10^{-4}$. This is highly significant because the p value is $2.66 \times 10^{-14}$. We can then reject the null that the coefficient is 0.
++ **$R^2$ interpretation:** We are using the adjusted $R^2$ which is 0.1743. This tells us that 17.43% of variation in respiratory rate is explained by this model, which is included only with altitude as the predictor. This is highly significant at $2.66\times 10^{-14}$. Additionally, this means that 82.57% of variation in respiratory rate is unexplained by the model. 
++ **Model conclusion:** This would be considered a signficiant model but it has weak explanatory power. There is a lot of error and much of the data *cannot* be explained by the model. We are sure that the $R^2$ is *not* zero but it is not *very* far from zero so this means that it has a weak explanatory power. 
 
 This is the equation of the line: y + 3.025e-0.4x + 8.386e-03
 We should look at how small the number this is based on the scale of the data. Order of magnitude defines an order of 10. X is altitude.
@@ -158,12 +159,12 @@ summary(fit2)
 #unique(rowan#species) #not a factor so it assumes alphabetical order. We know it's microphylla because it is the only one that has a coefficient
 ```
 
-+ **Intercept interpretation:** The intercept does not make biological sense because a species is never zero. The model fit chooses alphabetically what is the baseline; in this case, it is microphilia. For microphylla trees, we expect a mean of respiratory rate of 0.148680 when microphylla is zero. We can tell that this is highly significant since there is a p value is 2e-16. This means that the intercept is definitely not zero. For all categorical data, the intercept is relative to the baseline.
++ **Intercept interpretation:** For microphylla trees, we expect a mean of respiratory rate of 0.148680 when microphylla is zero. We can tell that this is highly significant since there is a p value is $2 \times 10^{-16}$. This means that the intercept is definitely not zero. However, the intercept does not make biological sense because a species is never zero. The model fit chooses alphabetically what is the baseline; in this case, it is microphilia. For all categorical data, the intercept is relative to the baseline.
 + **Species coefficient interpretation:** There are two species coefficient. They tell you what each one is relative to the baseline which, again, is microphylla. 
-  + For the first one, we expect, on average, that oligodonta trees have a respiratory rate 0.018830 lower than microphylla. It is compared to the microphylla as the baseline. However, this is **not** significant with a p value of 0.0995, so there is no evidence that it differs from zero.
-  + For the second one, we expect, sargentiana trees have a respiratory rate 0.006180 lower than microphylla. However, again, this is **not** significantly different with a p value of 0.5880.
-+ **$R^2$ interpretation:** $R^2$ = 0.002792 which is not significant with a p value of 0.2437. 
-+ **Model conclusion:** There is no explanatory evidence which means this is an entirely uninformative model. 
+  + For the first one, we expect, on average, that oligodonta trees have a respiratory rate 0.018830 lower than microphylla. It is compared to the microphylla as the baseline. However, this is *not* significant with a p value of 0.0995, so there is no evidence that it differs from zero.
+  + For the second one, we expect, sargentiana trees have a respiratory rate 0.006180 lower than microphylla. However, again, this is *not* significantly different with a p value of 0.5880.
++ **$R^2$ interpretation:** $R^2$ = 0.002792 which is not significant with a p value of 0.2437. This tells us that the model explains only 0.2792% of the data. 99.7208% of the data is unexplained!
++ **Model conclusion:** The model has no explanatory evidence which means this is an entirely uninformative model. 
 
 
 Finally, make a stylish figure of your findings, choosing your own geom!
@@ -235,14 +236,14 @@ Now that you have confirmed the residuals are roughly normally distributed (hint
 summary(fit3)
 ```
 
-+ **Intercept interpretation:** For a microphylla tree, which is our baseline species, that has a leaf length of zero, we expect the respiratory rate of 0.175923 which is highly significant because the p value is 2e-16. However, this does not make any biological sense. We cannot have a species at zero.
++ **Intercept interpretation:** For a microphylla tree, which is our baseline species again, that has a leaf length of zero, we expect the respiratory rate of 0.175923. It is highly significant because the p value is $2 \times 10^{-16}$. However, this does not make any biological sense. We cannot have a species at zero.
 + **Species coefficient interpretation:**
   + When controlling for leaf length, the coefficients are the change from the baseline species.
     + Controlling for leaf length, oligodonta species has an average respiratory rate of 0.003898 lower than microphylla. But it is not signifcant with a p value of 0.7713. Effectively, this means that it is not different from microphylla.
     + Controlling for leaf length, sargentiana has an overage respiratory rate of 0.050740 higher than microphylla. Again, this is not significant because the p value is 0.0864.
-+ **Leaf length coefficient interpretation:** When controllling for species, the leaf length is 0.003054 less than the base line of microphylla. This is significant with a p value of 0.0375
-+ **$R^2$ interpretation:** The $R^2$ value is 0.01398. This means that this model can explain 1.398% of the data. 98.602% of the data is unexplained by this model. Additionally, our p value is 0.06687 which shows that our $R^2$ value is **not** significant
-+ **Model conclusion:** Effectively, the explanatory power of this model is zero. 
++ **Leaf length coefficient interpretation:** When controllling for species, the leaf length is 0.003054 less than the base line of microphylla. This is significant with a p value of 0.0375.
++ **$R^2$ interpretation:** The $R^2$ value is 0.01398. This means that this model can explain 1.398% of the data. 98.602% of the data is unexplained by this model. Additionally, our p value is 0.06687 which shows that our $R^2$ value is *not* significant.
++ **Model conclusion:** Effectively, the explanatory power of this model is zero which means that it is not an informative model. 
 
 Finally, make a stylish scatterplot of your findings:
 

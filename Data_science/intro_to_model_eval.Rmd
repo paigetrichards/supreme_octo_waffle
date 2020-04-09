@@ -3,8 +3,9 @@ title: "Introduction to model evaluation"
 subtitle: "Data Science for Biologists, Spring 2020"
 author: "Paige Richards"
 output: 
-  html_document:
-    highlight: tango
+  html_document: 
+    theme: readable
+    highlight: espresso
 ---
 
 
@@ -14,6 +15,8 @@ library(tidyverse)
 library(broom) 
 library(modelr)
 library(patchwork)
+theme_set(theme_classic())
+set.seed(90196)
 ```
 
 ## Instructions
@@ -21,6 +24,8 @@ library(patchwork)
 Standard grading criteria apply, except there is no "answer style" - just write out answers normally! **Make sure your bulleted lists render appropriately in the knitted output!!!**
 
 This assignment will use an external dataset of various physical measurements from 250 adult males. Our goal for this assignment is to build and evaluate a model from this data to **predict body fat percentage** (column `Percent`) in adult males, and then use this model to predict future outcomes. Age is measured in years, weight in pounds, height in inches, and all other measurements are circumference measured in cm.
+
+<!-- **A note for anyone trying to rerun the code, a seed was set at 90196 which is my birthday (September 1st, 1996)! This is to make sure the model is the same for anyone who runs my code.** -->
 
 ```{r, collapse=T}
 fatmen <- read_csv("https://raw.githubusercontent.com/sjspielman/datascience_for_biologists/master/data/bodyfat.csv")
@@ -35,35 +40,45 @@ Using the `step()` function, determine the most appropriate model to explain var
 
 ```{r}
 ## Use step() to build and save a model to explain Percent. PLEASE use the argument trace=F when calling step()!!
-
+#if we wanted to build a linear model:
+#lm(Percent ~ , data = fatmen) #percent is why. BUT WHAT DO WE USE for x? If we put in x as dot (.), that tells us all things should be used as 
+step( lm(Percent ~ ., data = fatmen), trace = F) -> final_model #there are many other options that are used within R in other libraries such as leap. Trace tells us we dont want to see everything step does. 
+#we are going to use the equation in the model for everything else
 
 ## Examine output with summary OR broom functions tidy and glance
+broom::tidy(final_model)
+broom::glance(final_model) #option key gives you the opportunity to highlight vertically! It kept 7 predictors for percent
 ```
 
 #### Part 1 questions: Answer the questions in the templated bullets!
 
 1. In a bulleted list below, state the predictor variables for the final model and their P-values. You do not need to worry about coefficients!!
 
-    + (replace with first predictor)
-    + (replace with second predictor)
-    + (etc)
+    + Age with a p-value of $3.03 \times 10^{-2}$
+    + Weight with a p-value of $6.14 \times 10^{-4}$
+    + Neck with a p-value of $9.77 \times 10^{-2}$
+    + Abdomen with a p-value of $2.22 \times 10^{-29}$
+    + Thigh with a p-value of $6.13 \times 10^{-2}$
+    + Forearm with a p-value of $3.17 \times 10^{-3}$
+    + Wrist with a p-value of $2.88 \times 10^{-3}$
 
 2. What percentage of variation in bodyfat percentage is explained by this model? 
 
-    + (explained answer)
+    + 73.4% is explained by this model
 
 
 3. What percentage of variation in bodyfat percentage is UNEXPLAINED by this model?
   
-    + (unexplained answer)
+    + 26.6% is unexplained by this model
 
 4. What is the RMSE of your model? Hint: you need to run some code!
 
     ```{r}
     ## code to get RMSE of model, using the function modelr::rmse()
+modelr::rmse(final_model, fatmen) #NEED TO PUT IN THE DATQA SET USING
     ```
   
-    + (RMSE answer)
+    + The RMSE is 4.23. This means on average, the model is about 4.23% off of the actual percentages of body fat.
 
 
 ## Part 2: Evaluate the model using several approaches
@@ -73,27 +88,36 @@ Using the `step()` function, determine the most appropriate model to explain var
 **First, use a simple train/test approach**, where the training data is a random subset comprising 65% of the total dataset. Determine the R-squared (`modelr::rsquare()`) and RMSE (`modelr::rmse()`)  as determined from the training AND testing data.
 
 ```{r}
+percent_formula <- as.formula("Percent ~ Age + Weight + Neck + Abdomen + Thigh + Forearm + Wrist") #we needed to define it as a variable so we do not mess it up later. We won't accidentally forget something. This is also helpful not to hard code
+
 ## split data into train and test, using this variable as part of your code:
 training_frac <- 0.65
 
+training_data <- dplyr::sample_frac(fatmen, training_frac)
+
+testing_data <- dplyr::anti_join(fatmen, training_data) #whatever is not in common! Make sure to do the bigger dataset first here. This ensures that the testing data does not overlap with the training data
+
 ## Train model on training data. DO NOT USE summary(), just fit the model with the training data.
+trained_model <- lm(percent_formula, data = training_data) #we built a model using the percent_formula!. We always define the formula. Usually it is Y~X but because we are using an equation for a model using step, it is different and defined above. THen we need to define the data that we are using the linear regression for and what the data that is being applied to that formula.
 
 ## Determine metrics on TRAINING data (R-squared and RMSE), using the trained model
-
+rsquare(trained_model, data = training_data) #need to do model then data
+rmse(trained_model, data = training_data) #need to do model then data
 
 ## Determine metrics on TESTING data (R-squared and RMSE), using the trained model
-
+rsquare(trained_model, data = testing_data)
+rmse(trained_model, data = testing_data)
 ```
 
 #### Part 2.1 questions: Answer the questions in the templated bullets!
 
 1. Compare the training data $R^2$ to the testing data $R^2$. Which is higher (i.e., does the model run on training or testing data explain more variation in Percent), and is this outcome expected?
 
-  + (Answer goes here)
+  + Training R squared is 0.7573181 and my Testing R squared is a bit lower at 0.6987424. This is an expected outcome that the testing is worse than the training because the model is trying to be applied to data it has never seen before. The model does not seem to be overfitted, though.
 
 2. Compare the training data *RMSE* to the testing data *RMSE*. Which is *lower* (i.e., is there more error from the model run on training or testing data), and is this outcome expected?
 
-  + (Answer goes here)
+  + Training RMSE is 4.155797 but the RMSE for testing is 4.455027. The testing has slightly higher error than the trained data which is expected.
 
 
 
@@ -106,26 +130,55 @@ Use k-fold cross validation with **15 folds** to evaluate the model. Determine t
 ## First define the FUNCTION you will use with purrr::map which contains your linear model.
 ## Do NOT use step() in here - you should have used step in Part 1 to know which predictors should be included here
 my_bodyfat_model <- function(input_data){
-  # eh?? what goes in here??  
+  lm(percent_formula, data = input_data) 
 }
 
 ## perform k-fold cross validation, using this variable in your code
 number_folds <- 15
 
+crossv_kfold(fatmen, k = number_folds) %>% #IGNORE WARNING METHOD
+  mutate(model = purrr:: map(train, my_bodyfat_model), #we called it the new thing as model!
+         rsquared = purrr::map2_dbl(model, test, rsquare), #that's why this is called model. We named a new column called model
+         rmse_value = purrr::map2_dbl(model, test, rmse)) -> final_kfold #model then data
 ## Calculate the mean R^2 and RMSE 
+mean(final_kfold$rsquared)
+mean(final_kfold$rmse_value)
+
 
 ## Make figures for R^2 and RMSE, which clearly show the MEAN values for each distribution using stat_summary() or similar (unless you make a boxplot, which already shows the median)
+
+#can make a boxplot but if you don't, you need to do stat_summary!
+
+#AN EXAMPLE!
+
+#ggplot(final_kfold, aes(x = "", y = rmse_value)) +
+  #geom_viol(alpha = 0.7) +
+  #stat_summary()
+
+ggplot(final_kfold, aes(x = "", y = rmse_value)) +
+  geom_jitter(color = "dodgerblue") +
+  stat_summary(color = "forestgreen") +
+  labs(y = "RMSE Value",
+       x = "") -> rmse_graph
+
+ggplot(final_kfold, aes(x = "", y = rsquared)) +
+  geom_jitter(color = "purple") +
+  stat_summary(color = "forestgreen") +
+  labs(y = "R squared Value",
+       x = "") -> rsquared_graph
+
+rmse_graph + rsquared_graph
 ```
 
 #### Part 2.2 questions: Answer the questions in the templated bullets!
 
 1. Examine your distribution of $R^2$ values. What is the average $R^2$, and how does it compare to the **testing $R^2$** from Part 1?
 
-    + (Answer goes here)
+    + The average $R^2$ for the K fold cross validation is 0.6763894. The testing $R^2$ was 0.6987424. This shows that the K fold cross validation explains a little bit less of the data than the trained model could of testing data that it had not seen before. 
 
 2. Examine your distribution of *RMSE* values. What is the average *RMSE*, and how does it compare to the **testing RMSE** from Part 1?
 
-    + (Answer goes here)
+    + The RMSE value of the K fold cross validation is 4.350437. The testing RMSE from part 1 was 4.455027. The K fold cross validation had slightly less error than the trained model did when examining the testing data that it had not seen before.
   
 
 
@@ -134,24 +187,33 @@ number_folds <- 15
 ```{r}
 ## perform LOOCV (using the function my_bodyfat_model defined in Part 2.2)
 
+crossv_loo(fatmen) %>% #IGNORE WARNING METHOD
+  mutate(model = purrr:: map(train, my_bodyfat_model), #we called it the new thing as model!
+        rmse_value = purrr::map2_dbl(model, test, rmse)) -> final_loo #model then data
 
-## Calculate the mean of RMSE 
+## Calculate the mean RMSE 
+mean(final_loo$rmse_value)
+
 
 ## Make figure of RMSE distribution, which clearly shows the MEAN value for the distribution using stat_summary() (unless you make a boxplot, which already shows the median)
+ggplot(final_loo, aes(x = "", y = rmse_value)) +
+  geom_boxplot(color = "dodgerblue", fill = "aliceblue") +
+  labs(x = "",
+       y = "RMSE Value")
 ```
 
 #### Part 2.3 question: Answer the questions in the templated bullets!
 
 1. Examine your distribution of *RMSE* values. What is the average *RMSE*, and how does it compare to the **testing RMSE** from Part 1? How does it compare to the average *RMSE* from k-fold cross validation?
 
-    + (Answer goes here)
+    + The RMSE value of the K fold leave one out cross validation is 3.58246. This is much less than the K fold cross validation RMSE which was 4.350437.
 
 
 ### Part 2.4: Wrap-up
 
 Considering all three approaches, do you believe this model is highly explanatory of Percent (e.g., how are the $R^2$ values)? Further, do you believe the error in this model is low, moderate or high (e.g., how are the RMSE values)? Answer in 1-2 sentences in the bullet:
 
-  + (Answer goes here)
+  + Using each of these approaches, it appears that the model would cause you to be about 3-4% lower or higher than expected, in terms of error. This is generally pretty low error. For most of the models, the average $R^2$ at its lowest, 0.6763894, and its highest at 0.6987424. This means that the model can only explain about 67% - 70% of the data. This is generally not seen as a great model. Usually a model that can explain the data really well would be at 95%. It is not a poor model but it is definitely not the best. Overall, I would say this is an okay model. It has decent explanatory power and low error.
   
 
 ## Part 3: Predictions
@@ -184,19 +246,147 @@ New men have arrived, and we want to use our model to predict their body fat per
   + 16.1 cm Wrist circumference
 
 ```{r}
+percent_formula <- as.formula("Percent ~ Age + Weight + Neck + Abdomen + Thigh + Forearm + Wrist")
 ## Make a SINGLE tibble with THREE ROWS (one per observed new man), and use this tibble to predict outcomes with `modelr::add_predictions()
 ## HINT: See the tidyr assignment for different ways to make a tibble directly within R
+tibble(Age = c(37, 65, 19),
+       Weight = c(195, 183, 121),
+       Neck = c(43.6, 41.2, 30.2),
+       Abdomen = c(110.6, 90.1, 68),
+       Thigh = c(71.7, 77.5, 48.1),
+       Forearm = c(31.2, 32.2, 23.8),
+       Wrist = c(19.2, 18.2, 16.1)) -> new_men #this is how we made a tibble. Had an erorr with a comma out of place originally.
 
+modelr::add_predictions(new_men, final_model) #data then model
 ```
 
 #### Part 3 answers:
 
 Stick the answer after the colon for each bullet **in bold**:
 
-+ Bob's predicted body fat percent is: 
-+ Bill's predicted body fat percent is: 
-+ Fred's predicted body fat percent is: 
++ Bob's predicted body fat percent is: **33.64%**
++ Bill's predicted body fat percent is: **22.56%**
++ Fred's predicted body fat percent is: **2.93%**
 
 
 **BONUS QUESTION!**
-Which of the three predictions (Bob, Bill, and Fred) do you think is LEAST reliable? You may need some code to figure out which one, so add in below as needed!!
+Which of the three predictions (Bob, Bill, and Fred) do you think is LEAST reliable? You may need some code to figure out which one, so add in below as needed!! 
+
++ The prediction for Fred is the least reliable. As we can see in each graph below, I have patched together a scatterplot for each variable against percentage of body fat. I then added Bob's, Bill's, and Fred's data to each graph and made their points colorful. From the graph below, Fred is red, Bob is orange, and Bill is purple. When we are looking at the graphs to see which data is the least reliable, we are trying to see where it falls within the model and specifically where in the confidence interval. Consistently, we can see that Fred's data falls in the range of the data with the highest error or even outside of the mode. This happens with almost all of his variables. Bill and Bob vary as well and may not fit in the lowest variation; however, most of their data does. Fred's is the most varied and is therefore, the least reliable.
+
+ggplot(iros, aes(x = Petal.Length, y = Sepal. Width)) + geom_point() + geom_smooth(method = "lm")
+
+```{r fig.height = 20, fig.width= 10}
+ggplot(fatmen, aes(x = Age, y = Percent)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  annotate("point",
+           y = 2.93,
+           x = 19,
+           color = "red") +
+  annotate("point",
+           y = 33.64,
+           x = 37,
+           color = "orange") +
+  annotate("point",
+           y = 22.56,
+           x = 65,
+           color = "purple") -> age_graph #no one underthe age of a certain age. But we will do all parameters like this and base it off the confidence interval. We will have a hard time if someone is bigger than 250 and lower than 100 pounds. Can change x by doing xlim(c(0,300)). Fred is probably the least reliable. Answer is Fred! Do at least two-three examples of ggplot
+ggplot(fatmen, aes(x = Weight, y = Percent)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  annotate("point",
+           y = 2.93,
+           x = 121,
+           color = "red") +
+  annotate("point",
+           y = 33.64,
+           x = 195,
+           color = "orange") +
+  annotate("point",
+           y = 22.56,
+           x = 183,
+           color = "purple") -> weight_graph
+
+ggplot(fatmen, aes(x = Neck, y = Percent)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  annotate("point",
+           y = 2.93,
+           x = 30.2,
+           color = "red") +
+  annotate("point",
+           y = 33.64,
+           x = 43.6,
+           color = "orange") +
+  annotate("point",
+           y = 22.56,
+           x = 41.2,
+           color = "purple") -> neck_graph
+
+ggplot(fatmen, aes(x = Abdomen, y = Percent)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  annotate("point",
+           y = 2.93,
+           x = 68,
+           color = "red") +
+  annotate("point",
+           y = 33.64,
+           x = 110.6,
+           color = "orange") +
+  annotate("point",
+           y = 22.56,
+           x = 90.1,
+           color = "purple") -> abdomen_graph
+
+ggplot(fatmen, aes(x = Thigh, y = Percent)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  annotate("point",
+           y = 2.93,
+           x = 48.1,
+           color = "red") +
+  annotate("point",
+           y = 33.64,
+           x = 71.7,
+           color = "orange") +
+  annotate("point",
+           y = 22.56,
+           x = 77.5,
+           color = "purple") -> thigh_graph
+
+ggplot(fatmen, aes(x = Forearm, y = Percent)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  annotate("point",
+           y = 2.93,
+           x = 23.8,
+           color = "red") +
+  annotate("point",
+           y = 33.64,
+           x = 31.2,
+           color = "orange") +
+  annotate("point",
+           y = 22.56,
+           x = 32.2,
+           color = "purple") -> forearm_graph
+
+ggplot(fatmen, aes(x = Wrist, y = Percent)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  annotate("point",
+           y = 2.93,
+           x = 16.1,
+           color = "red") +
+  annotate("point",
+           y = 33.64,
+           x = 19.2,
+           color = "orange") +
+  annotate("point",
+           y = 22.56,
+           x = 18.2,
+           color = "purple") -> wrist_graph
+
+age_graph/weight_graph/neck_graph/abdomen_graph/thigh_graph/forearm_graph/wrist_graph
+```
