@@ -6,6 +6,8 @@ output:
   html_document:
     theme: readable
     highlight: espresso
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -73,6 +75,7 @@ First, you will build THREE distinct models (without stepwise model selection - 
 pima$diabetic <- factor(pima$diabetic, levels = c("No", "Yes")) #success is second! Failure is first!
 
 ## Show the output to prove to yourself that the factoring worked
+head(pima$diabetic) #worked!
 ```
 
 ```{r}
@@ -126,7 +129,7 @@ tibble(TPR = model_3_roc$sensitivities,
 bind_rows(model_1_tibble, model_2_tibble, model_3_tibble)%>%
   mutate(model_fact = factor(model, 
                              levels = c("Model 1", "Model 3", "Model 2"), 
-                             labels = c(paste0("Model 1 (AUC=", round(model_1_roc$auc[[1]],3), ")"), paste0("Model 3 (AUC=", round(model_3_roc$auc[[1]],3), ")"), paste0("Model 2 (AUC=", round(model_2_roc$auc[[1]],3), ")")))) %>% #need to change levels AND labels. Going to change labels to a variable so this doesn't look so gross. Also going to try to do the forecats method
+                             labels = c(paste0("Model 1 (AUC=", round(model_1_roc$auc[[1]],3), ")"), paste0("Model 3 (AUC=", round(model_3_roc$auc[[1]],3), ")"), paste0("Model 2 (AUC=", round(model_2_roc$auc[[1]],3), ")")))) %>% #need to change levels AND labels. Going to change labels to a variable so this doesn't look so gross.
   ggplot(aes(x = FPR, y = TPR, color = model_fact)) +
   geom_line()+
   geom_abline() +
@@ -139,11 +142,11 @@ Answer each in 1-2 sentences each *that are CLEARLY WRITTEN in YOUR OWN WORDS wi
 
 1. Which model has the highest AUC value, and what is its AUC? Given that AUC can range 0.5-1, do you believe this is highly accurate model?
 
-  + Model 1, 0.0839
+    + Model 1 has the highest AUC value with an AUC value of 0.0839. I do believe that this is a highly accurate model becuase it is much closer to 1 than it is to 0.5. I suppose there are better models out there, but I do think that this is a good model.
 
 2. Compare models 2 and 3. What are the AUC values for each? Does including `skin` in the model seem to improve the model's performance?
 
-  + Skin adds a very marginal benefit but not very much. 
+    + Model 2 and 3 are not very different from each other. The AUC from Model 2 is 0.8186 and the AUC for Model 3 is 0.8198. From here, we can really see that skin adds a very marginal benefit from model 2 to model 3, since this was the only variable added; however, with a 0.0012, I would argue that this does not contribute anything meaningful to the model's performance.
 
 ## Part 3: Work with the best model
 
@@ -201,17 +204,39 @@ train_plot + test_plot
 ```  
 
 
-+ Determine the AUC value for each, and plot the ROC curves for training and testing in the space below. Again, use one plotting panel and distinguish the fits with colors. ##Look at slide 18/22
++ Determine the AUC value for each, and plot the ROC curves for training and testing in the space below. Again, use one plotting panel and distinguish the fits with colors.
 ```{r}
 ## ROC for training/testing goes here
 
+#these are the AUC values for each
+train_roc$auc
+testing_roc$auc
+
+##Need to make into a tibble with specificities and sensitivites to be able to make a plot with them together.
+
+tibble(TPR = train_roc$sensitivities,
+       FPR = 1- train_roc$specificities,
+       model = "Training") -> training_data
+
+tibble(TPR = testing_roc$sensitivities,
+       FPR = 1 - testing_roc$specificities,
+       model = "Testing") -> testing_data
+
+#now need to put the two together! Since the columns are the same, you should bind the rows
+
+bind_rows(training_data, testing_data) -> joined_tibbles_test_train
+
+ggplot(joined_tibbles_test_train, aes(x = FPR, y = TPR)) +
+  geom_line(aes(color = model)) +
+  scale_color_manual(values = c("deepskyblue", "darkorchid")) +
+  labs(color = "Model")
 ```
 
 #### Part 3 Question
 
 How does this model perform when considering a training and testing split? Compare their specific AUC values and discuss whether you believe the model suffers from overfitting or not in 1-2 sentences.
 
-+ The model definitely is not over fitted. It actually performs better on the testing data!
++ When considering both the training and testing data for the model, we can definitely say that the model is not overfitted. We can **confidently** say this because the AUC value for the testing data is actually higher than the training data. If the model was overfitted, we would expect the AUC for the testing data to be signficantly lower than the trainng AUC. The AUC for the testing data was 0.885 and the AUC for the training data was 0.8263. Interestingly, this model performs better on data that it has never seen before than data it has seen before.
 
 
 ## Part 4: Evaluating at a given threshold
@@ -288,8 +313,8 @@ predict(model_1, new_pima, type = "response")
 
 1. At a threshold of 80%, does the model predict that Woman 1 is diabetic? Answer yes or no!
 
-  + No
+  + No, at a threshold of 80%, the model **does not** predict that Woman 1 has diabetic. With a threshold of 80%, to get a positive result, you would need to have a result of 80% or above. The first woman had a prediction to have diabetes of 10.64%; therefore, she had a negative result.
   
 2. At a threshold of 80%, does the model predict that Woman 2 is diabetic? Answer yes or no!
 
-  + No :(. Second lady prob has diabetes. It is likely that our threshold is not a good threshold.
+  + No, the prediction with a threshold of 80% for the second woman is 79.79%. Thus, this is a negative result for diabetes. However, looking at the data, I am not sure this is accurate. This tells us that perhaps the threshold we have chosen is not a good threshold.

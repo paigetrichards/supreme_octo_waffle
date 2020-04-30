@@ -1,0 +1,223 @@
+---
+title: "Clustering and PCA"
+subtitle: "Data Science for Biologists, Spring 2020"
+author: "Paige Richards"
+output: 
+  html_document:
+    theme: readable
+    highlight: espresso
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(patchwork)
+theme_set(theme_classic())
+## SET YOUR SEED BELOW!!! Make it YOUR SEED! Uncomment the line, and add your chosen seed number into the parentheses
+set.seed(90196) #MY BIRTHDAY :D
+```
+
+## Instructions
+
+Standard grading criteria apply. And...
+
++ Make sure you set your seed
++ Proofread to submit YOUR OWN WORDS!!
++ Make sure all bullets properly render in the knitted HTML. **YOU WILL LOSE POINTS FOR BULLETED LISTS THAT DO NOT TURN OUT PROPERLY IN THE HTML!!** 
++ Remember that `#` do NOT make comments in markdown. They make HEADERS!! You need to use HTML comments to have comments in your text that don't appear in the knitted HTML. For example, the line below does not appear in html.
+
+<!-- This is an actual comment in markdown. -->
+
+## The data
+
+We will be using a dataset of olives collected from various regions of Italy. The data gives the percentage of different fatty acids that comprise the oil in the olives. [Source](https://rdrr.io/cran/dslabs/man/olive.html)
+
+```{r, collapse=T}
+olives <- read_csv("https://raw.githubusercontent.com/sjspielman/datascience_for_biologists/master/data/olives.csv")
+dplyr::glimpse(olives)
+```
+
+
+## Part 1: Clustering
+
+Perform TWO k-means cluster analysis, once with **k=3** and once with **k=5**. 
+
+```{r}
+## Perform two clustering analyses here with k=3 and k=5, separately.
+
+## K=3 clustering wrangling, etc.
+olives %>%
+  select(-region, -area) %>%
+  kmeans(3) -> olives_k3
+
+## K=3 clustering wrangling, etc.
+olives %>%
+  select(-region, -area) %>%
+  kmeans(5) -> olives_k5
+#nothing special ABOUT the order of the numbers.
+```
+
+
+
+For each analysis, make a SINGLE FIGURE for each clustering analysis (two figures total). Choose your own adventure for each figure! You should explain per figure: a) Why did you decide to visualize the clustering using this particular figure? (~1 sentence) and b) What insights (if any!) does this figure provide (1-2 sentences)? Answer in the bullets below the given figure. 
+
+**You should not make two identical figures - they need to be _somewhat_ different.** For example, two barplots showing the relationship between clusters and regions is a no-go. Two scatterplots but with different x-axis and y-axis variables on the axes is ok! Two boxplots (violin, den sity, histogram, sina, jitter...) but with a different focal variable is ok! Either way, your figure MUST show the clusters.
+
+```{r}
+## Figure for k=3 including all associated wrangling
+olives %>%
+  mutate(k3_clusters = factor(olives_k3$cluster)) %>% #Need to do factor because it originally is said to be an int and it is a categorically factor
+  ggplot(aes(x= k3_clusters, y = linoleic)) +
+  geom_boxplot() +
+  geom_jitter(aes(color = region), alpha = 0.6) +
+  scale_color_manual(values = c("skyblue", "purple", "forestgreen"))+
+  labs(y = "Linoleic Acid",
+       x = "K3 Clusters",
+       color = "Region")
+
+```
+
++ **Answer: Why did you choose this figure?** 
+  + I thought it was intersting to see if specifically Linoleic Acid had any reasons for this particular grouping. I also thought within the clusters, there would be a possibility that it could be separated by region when regarding Linoleic Acid. I decided to do a jitter plot with a boxplot underneath it. I felt this really helped show the distribution nicely with the median and I could still see what was contributing in terms of regions to the clusters.
++ **Answer: What trends/insights (if any)  does the figure reveal, as they relate to the clusters?**
+  + These boxplots do overlap so I am not sure that there is a strong clustering in regards to Linoleic Acid. I thought it was interesting that Northern Italy does seem to be mostly in the second cluster in regards to Linoleic Acid. In cluster 1 and 3, it seems that Sardinia and Southern Italy are stronger there. I am not convinced that Linoleic Acid and the regions when associated with Linoleic Acid are the reasons that these three groups have been developed.
+
+
+```{r}
+## Figure for k=5 including all associated wrangling
+
+olives %>%
+  mutate(k5_clusters = factor(olives_k5$cluster)) %>% #need to factor
+  ggplot(aes(x = k5_clusters, y = oleic)) +
+  geom_boxplot()+
+  geom_jitter(aes(color = area), alpha = 0.7, size = 1.0) +
+  labs(y = "Oleic Acid",
+       x = "K5 Clusters",
+       color = "Area") +
+  scale_color_manual(values = c("darkblue", "black", "darkgoldenrod1", "darkgreen", "darkmagenta", "darkorange", "deeppink", "green", "cyan")) #needed to choose my own colors BECAUSE the colors it came with were difficult to distinguish. These are not colorblind friendly unfortunately because green and red are together but with 9 areas, I think it would be difficult to make colorblind friendly. Something to try and work on in the future.
+```
+
++ **Answer: Why did you choose this figure?** 
+  + I did try a couple of different plots with different acids; however, I liked the original setup I had with a boxplot and jitter plot overlapping. Therefore, I decided to keep the basic outline of what I did previously. This time, I wanted to look at area and from my trials with several different acids, I settled on Oleic Acid because there seemed to actually be some interesting differences in the clusters.
++ **Answer: What trends/insights (if any) does the figure reveal, as they relate to the clusters?**
+  + As we look at the plot, we can see that there is a decrease in Oleic Acid from one to four and then another increase in cluster 5. It looks like there is an order (in decreasing in Oleic Acid) by 1, 5, 2, 3, 4. It is also very interesting that, for the most part, only South-Apulia is in cluster 4. Everything else seems to be some kind of mix of a bunch of different areas. I am moderately convinced that Oleic Acid has some involvement in the clustering; however, I am not convinced at all that area has any involvement in regards to Oleic acid and clustering. 
+
+
+## Part Two: PCA
+
+Perform a principal components analysis on this dataset, and create TWO figures from your PCA. Each figure should have a brief explanation as a bullet below it. For each figure, your should be labeled to include information about how much variation the given PC explains in the data.
+
+```{r}
+## Code to perform PCA goes here
+olives %>%
+  select(-region, -area) %>% #need to get rid of things that are not numbers
+  scale() %>% #makes into matrix
+  prcomp() -> olives_pca
+```
+
+1. But first, use code to answer this question! Intepret how variables in the initial dataset **load** on the PCs by examining, you guessed it, the loadings. In the bullets below, state which SINGLE variable load most strongly on PC1 and PC2 each, and which SINGLE variable loads most weakly on PC1 and PC2.
+
+```{r}
+## Code to examine loadings goes here
+olives_pca$rotation #not word loading BUT it is what it is
+```
+
++ **Strongest PC1 loading:** 
+  + Oleic has the strongest load with a negative load on PC1.
++ **Strongest PC2 loading:** 
+  + Linoleic has the strongest load with a negative load on PC2.
++ **Weakest PC1 loading:** 
+  + Stearic acid has the weakest load with a negative load on PC1.
++ **Weakest PC2 loading:** 
+  + Palmitic has the weakest load going a positive load on PC2.
+
+2. Plot PC2 against PC1 (PC2 is on Y and PC1 is on X) as a scatterplot, where you use color to distinguish among **olive region** (NOT area!). Make sure to show ellipses for each grouping. Do NOT include loading arrows. In the bullet below, _explain in 2-3 sentences_ if and how either PC1 or PC2 discriminates olive region. You may write a bulleted list *as long as it renders properly.*
+
+```{r}
+## Code to make this figure goes here
+#olives_pca$x #actual prinicipal components. It is a matrix but needs to be a tibble
+as_tibble(olives_pca$x) %>%
+  mutate(region = olives$region) %>%
+  ggplot(aes(x = PC1, y = PC2, color = region)) +
+  geom_point() +
+  stat_ellipse() +
+  scale_color_manual(values = c("aquamarine", "blueviolet", "darkgreen"))+
+  labs(color = "Region")
+```
+
++ **Explanation for figure:** 
+  + Looking at the figure, there are **distinct** areas; however, there is some overlapping, especially at the bottom of the figure. I do think there is an argument that there is some difference in the regions. We can definitely see this difference between the three regions as there are distinct boundaries. For example, if we were to get an olive with a PC1 of 2.5 and PC2 of 0, we could place that with some confidence in the Northern Italy region. It is not perfectly clean, but it does seem pretty good. It seems that PC1 and PC2 do discriminate in region.
+
+3. Plot PC2 against PC1 as a scatterplot, where you use color to distinguish among **olive area** (the other categorical column!). Make sure to show ellipses for each grouping. Do NOT include loading arrows. In the bullet below, _explain in 2-3 sentences_ if and how either PC1 or PC2 discriminates olive area. You may write a bulleted list *as long as it renders properly.*
+
+```{r}
+## Code to make this figure goes here
+as_tibble(olives_pca$x) %>%
+  mutate(area = olives$area) %>%
+  ggplot(aes(x = PC1, y = PC2, color = area)) +
+  geom_point() +
+  stat_ellipse() + #bonus if we can order areas that are in the order and color like italy. maybe try to do an overlapping with the map.
+  labs(color = "Area")
+```
+
++ **Explanation for figure** 
+  + As opposed to the previous figure, there is **much** more overlapping; however, again, we can still visualize discrete areas. They are in specific places on the graph, except for Sicily which seems to have a large spread and a bit less distinct. It appears that each area does group pretty well together. It seems that PC1 and PC2 do discriminate in area to some degree.
+
+
+
+## BONUS QUESTION 1
+
+Make a figure of the loadings on PC1 and PC2 in the space below. Make sure it is as legible as possible! No explanation needed, just make a plot!
+```{r, fig.height=4, fig.width=6}
+## Bonus loadings plot
+olives_pca$rotation %>%
+  as.data.frame() %>%
+  rownames_to_column("Quantity") %>%
+  as_tibble() -> loadings_clean
+
+awesome_arrow <- arrow(length=unit(0.30,"cm"), ends = "last", type = "closed") #ends = last makes the arrows point out! 
+
+ggplot(loadings_clean, aes(x = PC1, y = PC2)) +
+  geom_segment(aes(x= 0, y = 0, xend = PC1, yend = PC2), arrow = awesome_arrow) + #OMG THE X and Y need to be in an aesthetic!!
+  geom_text(aes(label = Quantity), family = "Times New Roman", color = "dodgerblue4") + #how do you make the words, NOT overlap on the arrow?? very annoying
+  xlim(c(-0.7,0.7)) + ylim(c(-0.7,0.7))
+```
+
+## BONUS QUESTION 2
+
+Perform a k-means clustering with *k=3* on the PCs to examine whether olive *regions* cluster together. **You must include a clear explanation (1-3 sentences) to receive ANY CREDIT AT ALL for this bonus.**
+```{r, fig.height= 5, fig.width= 8}
+## Bonus clustering
+olives_pca$x %>%
+  as_tibble() -> olives_pca_tibble
+
+olives_pca_tibble %>% #everything was a number so nothing to get rid of
+  kmeans(3) -> olives_pca_k3
+
+
+olives_pca_tibble %>%
+  mutate(k3_clusters = factor(olives_k3$cluster)) %>% #need to factor to NOT make it an integer
+  ggplot(aes(x= PC1, y = PC2, color = k3_clusters)) +
+  geom_point() +
+  stat_ellipse() +
+  scale_color_manual(values = c("aquamarine1", "deepskyblue1", "darkslateblue")) + #should not hardcode
+  labs(color = "K3 Clusters") +
+  ggtitle("Unknown Clustering of PCAs") -> cluster_graph
+
+olives_pca_tibble %>%
+  mutate(region = olives$region) %>%
+  ggplot(aes(x= PC1, y = PC2, color = region)) +
+  geom_point() +
+  stat_ellipse() +
+  scale_color_manual(values = c("aquamarine1", "deepskyblue1", "darkslateblue")) + #should not hardcode next time
+  labs(color = "Regions") +
+  ggtitle("The Known Regions of Olives") -> regions_graph
+
+cluster_graph + regions_graph #needed to load patchwork. This was done at the top
+```
+
++ **Bonus explanation:**
+  + I decided to look at PC1 and PC2 and whether a K3 clustering would show whether olive regions cluster together here. To do this, I created two graphs that are identical except in the coloring of the points. For the graph on the left, I colored based on the K3 clusters. For the graph on the right, I colored based on the known regions. As we compare across, we see there seems to be some similarity with Northern Italy and cluster 1; however, looking at cluster 1 and 3 in relation to Sardinia and Southern Italy, the similarities disappear. In the graph on the right, we can see clearly that Sardinia is a small tight region in the middle. Compare that to cluster 3, which covers a large area of the plot, it does not appear as though they are similar. We see the same with cluster 1 and Southern Italy. Southern Italy covers a large area, whil cluster 1 covers a much smaller area. As I am looking at these graphs, I am unconvinced that regions is the reason that these clusters on the PCA have formed.
